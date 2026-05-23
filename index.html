@@ -504,8 +504,10 @@ main {
   applyLang();
 
   /* ---------- Apply per-game enable/disable from /config.json ---------- */
-  /* Default: every card is shown. A game is hidden only when its slug
-     is explicitly listed in config.games with enabled === false. */
+  /* Default: every card is enabled. A game is greyed-out and made
+     non-interactive only when its slug is explicitly listed in
+     config.games with enabled === false. Card stays visible so kids
+     can see what's there but can't open it. */
   fetch('./config.json', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : null)
     .then(cfg => {
@@ -517,7 +519,12 @@ main {
         if (!m) return;
         const slug = m[1];
         const entry = cfg.games[slug];
-        if (entry && entry.enabled === false) card.remove();
+        if (entry && entry.enabled === false) {
+          card.classList.add('coming-soon');
+          link.removeAttribute('href');
+          link.setAttribute('aria-disabled', 'true');
+          link.setAttribute('tabindex', '-1');
+        }
       });
     })
     .catch(() => { /* config missing/unreachable -> show all cards */ });
