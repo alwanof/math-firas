@@ -1,0 +1,13 @@
+{
+  "rewards": [
+    { "src": "images/1tl.jpg",  "weight": 10, "label": "1 TL"  },
+    { "src": "images/5tl.jpg",  "weight": 50, "label": "5 TL"  },
+    { "src": "images/10tl.jpg", "weight": 20, "label": "10 TL" },
+    { "src": "images/20tl.jpg", "weight": 20, "label": "20 TL" }
+  ],
+  "games": {
+    "number_city":      { "enabled": true },
+    "base-ten-builder": { "enabled": true },
+    "robot-decomposer": { "enabled": true }
+  }
+}

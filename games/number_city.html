@@ -766,13 +766,26 @@ main {
     document.title = S('title').replace(/^🏙️\s*/, '') + ' — Grade 2 Math';
   }
 
-  /* ---------- Rewards (5tl.jpg filename corrected) ---------- */
-  const REWARDS = [
+  /* ---------- Rewards (overridden at runtime by /config.json if present) ---------- */
+  let REWARDS = [
     { src: '../images/1tl.jpg',  weight: 10, label: '1 TL'  },
     { src: '../images/5tl.jpg',  weight: 50, label: '5 TL'  },
     { src: '../images/10tl.jpg', weight: 20, label: '10 TL' },
     { src: '../images/20tl.jpg', weight: 20, label: '20 TL' },
   ];
+
+  fetch('../config.json', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(cfg => {
+      if (!cfg || !Array.isArray(cfg.rewards) || !cfg.rewards.length) return;
+      const next = cfg.rewards.map(r => ({
+        src: /^(\.\.\/|\/|https?:\/\/)/.test(r.src) ? r.src : '../' + String(r.src).replace(/^\.?\//, ''),
+        weight: Number(r.weight) || 0,
+        label: String(r.label || ''),
+      })).filter(r => r.src && r.weight > 0);
+      if (next.length) REWARDS = next;
+    })
+    .catch(() => { /* keep hardcoded REWARDS as fallback */ });
 
   /* ---------- Turkish number words (0–100) ---------- */
   const ONES_WORDS = ['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];

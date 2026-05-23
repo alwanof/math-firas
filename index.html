@@ -502,6 +502,25 @@ main {
   });
 
   applyLang();
+
+  /* ---------- Apply per-game enable/disable from /config.json ---------- */
+  /* Default: every card is shown. A game is hidden only when its slug
+     is explicitly listed in config.games with enabled === false. */
+  fetch('./config.json', { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : null)
+    .then(cfg => {
+      if (!cfg || !cfg.games || typeof cfg.games !== 'object') return;
+      document.querySelectorAll('article.game-card').forEach(card => {
+        const link = card.querySelector('a.play-btn');
+        if (!link) return;
+        const m = (link.getAttribute('href') || '').match(/games\/(.+?)\.html/);
+        if (!m) return;
+        const slug = m[1];
+        const entry = cfg.games[slug];
+        if (entry && entry.enabled === false) card.remove();
+      });
+    })
+    .catch(() => { /* config missing/unreachable -> show all cards */ });
 })();
 </script>
 
