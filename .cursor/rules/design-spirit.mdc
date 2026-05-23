@@ -1,0 +1,55 @@
+---
+description: Sunny-City-Cartoon visual identity for every math game in games/. Enforces palette, typography, sticker shadows, and signature animations defined in DESIGN_SPIRIT.md.
+globs: games/**/*.html,index.html
+alwaysApply: false
+---
+
+# Sunny-City-Cartoon Design Spirit
+
+Every game in `games/` and the launcher (`index.html`) **must** match the spirit defined in `@DESIGN_SPIRIT.md` (project root). Read it before designing UI. Do not invent new colors, fonts, or shadow styles.
+
+## Hard requirements (non-negotiable)
+
+1. **Palette tokens** — copy this `:root` block verbatim, do not rename:
+
+```css
+:root {
+  --sky-top:#ffd9a8; --sky-mid:#ffb88c; --sky-bottom:#87ceeb;
+  --sun:#ffd23f; --cloud:#ffffff;
+  --ink:#1f1d2c; --ink-soft:#4a4760;
+  --good:#4caf50; --bad:#ef4f4f; --warm:#ff7a59;
+  --b1:#ff5252; --b2:#ffca28; --b3:#66bb6a;
+  --b4:#42a5f5; --b5:#ab47bc; --b6:#ff9800;
+}
+```
+
+2. **Background** is always the 3-stop sky gradient (`--sky-top → --sky-mid → --sky-bottom`).
+3. **Font stack**: `"Comic Sans MS","Chalkboard SE","Comic Neue","Trebuchet MS",system-ui,sans-serif`. No Inter/Poppins/Roboto.
+4. **Every interactive/card element** gets a chunky `--ink` border (2–5px) **plus** a solid offset shadow `Npx Npx 0 var(--ink)`. Never blurred, never gray, never colored.
+5. **Press feel** on every clickable element:
+
+```css
+.btn:hover  { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--ink); }
+.btn:active { transform: translate( 2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+```
+
+6. **Choice buttons in a row** cycle through `.color-1`..`.color-5` from the rainbow-six palette.
+7. **Progress bar fill** is the gradient `linear-gradient(90deg,#ff5252 0%,#ffca28 50%,#66bb6a 100%)`.
+8. **Ambient layers** present on every game: sky → sun → 2–3 drifting clouds → faded horizon row (opacity 0.6) → animated ground strip with 2–3 moving objects.
+9. **Feedback animations**: correct = `correctPulse` + `--good`, wrong = `wrongShake` + `--bad`, modal pop = `popIn` with springy `cubic-bezier(.34,1.56,.64,1)`.
+10. **No** glassmorphism, no thin lines, no line-art icon sets, no muted enterprise palette, no pure `#000` (always `--ink`).
+
+## When in doubt
+
+Open `@games/number_city.html` — it is the reference implementation. Match its visual rhythm.
+
+## Spirit checklist before shipping
+
+- [ ] Palette tokens unchanged
+- [ ] Comic Sans stack
+- [ ] Sticker borders + hard offset shadows on every surface
+- [ ] Lift-on-hover / press-on-click on every button
+- [ ] Rainbow choice buttons
+- [ ] Sun + clouds + horizon + animated ground present
+- [ ] Correct/wrong/win animations use the named keyframes

@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>Robot Ayrıştırıcı — 2. Sınıf Matematik</title>
+<style>
+/* =============================================================
+   ROBOT DECOMPOSER / ROBOT AYRIŞTIRICI — Grade 2 Math Game
+   Target concept: compose & decompose two-digit numbers
+   Curriculum: MAT.2.1.2
+   Single-file, no external libraries.
+   ============================================================= */
+
+:root {
+  --sky-top:    #ffd9a8;
+  --sky-mid:    #ffb88c;
+  --sky-bottom: #87ceeb;
+  --sun:        #ffd23f;
+  --ink:        #1f1d2c;
+  --ink-soft:   #4a4760;
+  --good:       #4caf50;
+  --bad:        #ef4f4f;
+  --warm:       #ff7a59;
+  --b1: #ff5252; --b2: #ffca28; --b3: #66bb6a;
+  --b4: #42a5f5; --b5: #ab47bc; --b6: #ff9800;
+  /* Lab-neon accents for this game */
+  --bg-top:       #d8e9ff;
+  --bg-mid:       #c4d4ff;
+  --bg-bottom:    #e0c4ff;
+  --neon-cyan:    #00d4ff;
+  --neon-magenta: #ff3eb5;
+  --neon-yellow:  #ffe14d;
+  --neon-purple:  #9b5cff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", "Trebuchet MS", system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bottom) 100%);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Circuit grid pattern — lab vibe */
+#app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(31,29,44,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31,29,44,0.07) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 0;
+}
+
+/* -------- Header -------- */
+header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255,255,255,0.9);
+  border-bottom: 4px solid var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.title {
+  font-size: clamp(1rem, 3vw, 1.75rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-shadow: 2px 2px 0 var(--neon-cyan);
+  white-space: nowrap;
+}
+.difficulty-badge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 0.15rem 0.5rem;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--neon-yellow);
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.difficulty-badge.medium { background: var(--neon-cyan); }
+.difficulty-badge.hard   { background: var(--neon-magenta); color: #fff; }
+
+.lang-toggle {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 0.35rem 0.9rem;
+  background: var(--ink);
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  letter-spacing: 0.05em;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.lang-toggle:hover { background: var(--ink-soft); }
+.lang-toggle:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+.lang-toggle:focus-visible { outline: 3px solid var(--neon-cyan); outline-offset: 2px; }
+
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
+  max-width: 320px;
+}
+.progress-track {
+  flex: 1;
+  height: 22px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff5252 0%, #ffca28 50%, #66bb6a 100%);
+  transition: width 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+.progress-text {
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* -------- Main game area -------- */
+main {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1rem 1.5rem;
+  overflow-y: auto;
+}
+
+/* -------- Robot + speech bubble -------- */
+.robot-row {
+  width: min(760px, 95vw);
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+.robot {
+  width: 110px;
+  height: 130px;
+  flex-shrink: 0;
+  animation: robotBob 3s ease-in-out infinite;
+  filter: drop-shadow(3px 3px 0 var(--ink));
+}
+@keyframes robotBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+.robot[data-state="happy"] { animation: robotJump 0.6s ease; }
+.robot[data-state="sad"]   { animation: robotShake 0.5s ease; }
+@keyframes robotJump {
+  0%, 100% { transform: translateY(0); }
+  40%      { transform: translateY(-18px) rotate(-5deg); }
+  70%      { transform: translateY(-18px) rotate(5deg); }
+}
+@keyframes robotShake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-6px); }
+  75%      { transform: translateX(6px); }
+}
+.robot .eye {
+  transform-origin: center;
+  animation: blink 5s infinite;
+}
+@keyframes blink {
+  0%, 96%, 100% { transform: scaleY(1); }
+  98%           { transform: scaleY(0.1); }
+}
+.robot[data-state="happy"] .eye { animation: none; transform: scaleY(0.4); }
+
+/* Speech bubble */
+.bubble {
+  flex: 1;
+  position: relative;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  padding: 0.85rem 1.25rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 130px;
+}
+.bubble::before {
+  content: "";
+  position: absolute;
+  left: -14px; top: 35px;
+  width: 0; height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-right: 16px solid var(--ink);
+}
+.bubble::after {
+  content: "";
+  position: absolute;
+  left: -8px; top: 38px;
+  width: 0; height: 0;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-right: 12px solid #fff;
+}
+.robot-talk {
+  font-size: clamp(0.85rem, 2.1vw, 1rem);
+  font-weight: 700;
+  color: var(--neon-purple);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.equation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: clamp(1.6rem, 5.5vw, 2.8rem);
+  font-weight: 900;
+  color: var(--ink);
+  padding: 0.25rem 0;
+}
+.eq-num { color: var(--warm); text-shadow: 2px 2px 0 var(--ink); }
+.eq-op  { color: var(--ink-soft); }
+
+/* -------- Slots (drop targets) -------- */
+.slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  min-height: 58px;
+  padding: 0.2rem 0.6rem;
+  background: rgba(255,225,77,0.25);
+  border: 4px dashed var(--ink);
+  border-radius: 10px;
+  font-size: clamp(1.4rem, 4.5vw, 2.2rem);
+  font-weight: 900;
+  color: var(--ink-soft);
+  transition: background 0.15s ease, transform 0.15s ease;
+  position: relative;
+}
+.slot.empty::before { content: "?"; color: rgba(31,29,44,0.35); }
+.slot.target {
+  background: rgba(0,212,255,0.3);
+  border-color: var(--neon-cyan);
+  transform: scale(1.05);
+  box-shadow: 0 0 18px var(--neon-cyan);
+}
+.slot.filled {
+  background: var(--neon-yellow);
+  border-style: solid;
+  color: var(--ink);
+  cursor: pointer;
+}
+.slot.filled::before { content: ""; }
+.slot.shake { animation: slotShake 0.4s ease; }
+@keyframes slotShake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-6px); }
+  75%      { transform: translateX(6px); }
+}
+
+/* -------- Card pool -------- */
+.card-pool {
+  width: min(760px, 95vw);
+  background: rgba(255,255,255,0.85);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  padding: 0.75rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 90px;
+}
+.pool-label {
+  width: 100%;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 0.2rem;
+}
+
+/* Card */
+.card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  height: 64px;
+  padding: 0 0.7rem;
+  font-size: clamp(1.3rem, 3.8vw, 1.8rem);
+  font-weight: 900;
+  color: var(--ink);
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: grab;
+  position: relative;
+  touch-action: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.card:focus-visible { outline: 3px solid var(--neon-cyan); outline-offset: 2px; }
+.card.dragging {
+  cursor: grabbing;
+  z-index: 50;
+  box-shadow: 0 0 24px var(--neon-magenta), 4px 4px 0 var(--ink);
+  pointer-events: none;
+}
+.card.selected {
+  background: var(--neon-yellow);
+  transform: translate(-2px,-2px) scale(1.05);
+  box-shadow: 0 0 18px var(--neon-magenta), 4px 4px 0 var(--ink);
+  animation: cardPulse 1s ease-in-out infinite;
+}
+@keyframes cardPulse {
+  0%, 100% { transform: translate(-2px,-2px) scale(1.05); }
+  50%      { transform: translate(-2px,-2px) scale(1.1); }
+}
+.card.placed { opacity: 0.25; pointer-events: none; }
+.card.used   { display: none; }
+.card.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; color: #fff; }
+.card.wrong-flash   { animation: wrongShake  0.5s ease; background: var(--bad)  !important; color: #fff; }
+@keyframes correctPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+@keyframes wrongShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+/* -------- Build-mode running total -------- */
+.build-total {
+  width: min(760px, 95vw);
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  padding: 0.6rem 1rem;
+  box-shadow: 4px 4px 0 var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.build-label {
+  font-weight: 800;
+  color: var(--ink-soft);
+  font-size: clamp(0.85rem, 2.1vw, 1rem);
+}
+.build-sum {
+  font-size: clamp(1.4rem, 4.5vw, 2.1rem);
+  font-weight: 900;
+  color: var(--warm);
+  text-shadow: 2px 2px 0 var(--ink);
+  min-width: 80px;
+  text-align: center;
+  padding: 0 0.5rem;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: var(--neon-yellow);
+}
+.build-sum.match {
+  background: var(--good);
+  color: #fff;
+  animation: cardPulse 1s ease infinite;
+}
+.build-chips {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  max-width: 60%;
+}
+.build-chip {
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 0.2rem 0.5rem;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  animation: blockPop 0.3s ease;
+}
+.build-chip:hover { background: var(--bad); color: #fff; }
+@keyframes blockPop {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* -------- Action row -------- */
+.action-row {
+  width: min(760px, 95vw);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.action-btn {
+  font-family: inherit;
+  font-weight: 900;
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+  padding: 0.7rem 1.4rem;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.action-btn.check { background: var(--good); color: #fff; flex: 2; min-width: 120px; }
+.action-btn.clear { background: #fff; color: var(--ink); flex: 1; min-width: 100px; }
+.action-btn:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.action-btn:active { transform: translate(2px,2px);   box-shadow: 2px 2px 0 var(--ink); }
+.action-btn:focus-visible { outline: 3px solid var(--neon-cyan); outline-offset: 2px; }
+.action-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* -------- Multiple choice row -------- */
+.mc-row {
+  width: min(760px, 95vw);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.mc-btn {
+  flex: 1 1 110px;
+  max-width: 180px;
+  min-height: 80px;
+  font-family: inherit;
+  font-size: clamp(1.3rem, 3.8vw, 1.9rem);
+  font-weight: 900;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.mc-btn:nth-child(1) { background: var(--neon-cyan); }
+.mc-btn:nth-child(2) { background: var(--neon-yellow); }
+.mc-btn:nth-child(3) { background: var(--neon-magenta); color: #fff; text-shadow: 1px 1px 0 var(--ink); }
+.mc-btn:nth-child(4) { background: var(--neon-purple);  color: #fff; text-shadow: 1px 1px 0 var(--ink); }
+.mc-btn:hover  { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--ink); }
+.mc-btn:active { transform: translate(2px,2px);   box-shadow: 2px 2px 0 var(--ink); }
+.mc-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.mc-btn.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; color: #fff; }
+.mc-btn.wrong-flash   { animation: wrongShake  0.5s ease; background: var(--bad)  !important; color: #fff; }
+
+/* -------- Feedback -------- */
+.feedback {
+  min-height: 36px;
+  font-size: clamp(1rem, 2.4vw, 1.25rem);
+  font-weight: 800;
+  text-align: center;
+  padding: 0.3rem 1rem;
+}
+.feedback.good { color: var(--good); animation: bounceIn 0.5s ease; }
+.feedback.bad  { color: var(--bad);  animation: bounceIn 0.5s ease; }
+@keyframes bounceIn {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.hint-chip {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: rgba(255,225,77,0.85);
+  border: 2px dashed var(--ink);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  margin-top: 0.3rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.hint-chip.visible { opacity: 1; }
+
+/* -------- Reward modal -------- */
+.reward-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(31,29,44,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+.reward-modal[hidden] { display: none; }
+.reward-card {
+  background: #fff;
+  border: 5px solid var(--ink);
+  border-radius: 24px;
+  padding: 1.5rem 2rem;
+  box-shadow: 10px 10px 0 var(--ink);
+  text-align: center;
+  max-width: 500px;
+  width: 92vw;
+  animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+  z-index: 2;
+}
+@keyframes popIn {
+  0%   { transform: scale(0) rotate(-15deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.reward-card h2 {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  margin-bottom: 1rem;
+  color: var(--neon-magenta);
+  text-shadow: 3px 3px 0 var(--ink);
+}
+.reward-image-wrap {
+  width: 220px;
+  height: 140px;
+  margin: 0 auto 1rem;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5e9c5, #e8c873);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.reward-image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.reward-image-wrap .fallback {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--ink);
+  padding: 0.5rem;
+  text-align: center;
+  line-height: 1.3;
+}
+.reward-msg-text {
+  font-size: 1.05rem;
+  margin-bottom: 1.25rem;
+  color: var(--ink-soft);
+}
+.play-again {
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 900;
+  padding: 0.8rem 2rem;
+  background: var(--good);
+  color: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: pointer;
+}
+.play-again:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.play-again:active { transform: translate(2px,2px);   box-shadow: 2px 2px 0 var(--ink); }
+.play-again:focus-visible { outline: 3px solid var(--neon-cyan); outline-offset: 3px; }
+
+.confetti-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  top: -20px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.9; }
+}
+
+/* Drag ghost — element following pointer */
+.drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.85;
+  transform: translate(-50%,-50%) rotate(-5deg);
+  box-shadow: 0 0 30px var(--neon-magenta);
+}
+
+/* -------- Mobile tweaks -------- */
+@media (max-width: 520px) {
+  header { padding: 0.5rem 0.75rem; gap: 0.4rem; }
+  main   { padding: 0.75rem 0.5rem 1rem; gap: 0.5rem; }
+  .robot { width: 80px; height: 100px; }
+  .bubble { padding: 0.6rem 0.85rem; min-height: 100px; }
+  .bubble::before, .bubble::after { display: none; }
+  .card { min-width: 60px; height: 54px; font-size: 1.2rem; }
+  .slot { min-width: 64px; min-height: 50px; }
+  .lang-toggle { font-size: 0.75rem; padding: 0.25rem 0.6rem; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ Header ============ -->
+  <header>
+    <div class="title">
+      <span id="gameTitle">🤖 Robot Ayrıştırıcı</span>
+      <span class="difficulty-badge" id="difficultyBadge">Kolay</span>
+    </div>
+    <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" id="progressBar">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0 / 10</div>
+    </div>
+    <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
+  </header>
+
+  <!-- ============ Main ============ -->
+  <main>
+
+    <!-- Robot + speech bubble -->
+    <div class="robot-row">
+      <svg class="robot" data-state="idle" viewBox="0 0 100 130"
+           aria-label="Friendly robot mascot" id="robotSvg">
+        <!-- antenna -->
+        <line x1="50" y1="5" x2="50" y2="22" stroke="#1f1d2c" stroke-width="3"/>
+        <circle cx="50" cy="6" r="6" fill="#ff3eb5" stroke="#1f1d2c" stroke-width="2">
+          <animate attributeName="fill" values="#ff3eb5;#ffe14d;#00d4ff;#ff3eb5" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <!-- head -->
+        <rect x="15" y="22" width="70" height="62" rx="12" fill="#e0e6ee" stroke="#1f1d2c" stroke-width="4"/>
+        <!-- bolts -->
+        <circle cx="22" cy="28" r="2.5" fill="#1f1d2c"/>
+        <circle cx="78" cy="28" r="2.5" fill="#1f1d2c"/>
+        <circle cx="22" cy="78" r="2.5" fill="#1f1d2c"/>
+        <circle cx="78" cy="78" r="2.5" fill="#1f1d2c"/>
+        <!-- eyes -->
+        <circle class="eye" cx="36" cy="46" r="8" fill="#00d4ff" stroke="#1f1d2c" stroke-width="2"/>
+        <circle cx="36" cy="46" r="3" fill="#1f1d2c"/>
+        <circle class="eye" cx="64" cy="46" r="8" fill="#00d4ff" stroke="#1f1d2c" stroke-width="2"/>
+        <circle cx="64" cy="46" r="3" fill="#1f1d2c"/>
+        <!-- mouth: idle -->
+        <g class="mouth mouth-idle">
+          <rect x="35" y="64" width="30" height="6" rx="2" fill="#1f1d2c"/>
+        </g>
+        <!-- mouth: happy -->
+        <g class="mouth mouth-happy" style="display:none">
+          <path d="M 32 62 Q 50 78 68 62" fill="none" stroke="#1f1d2c" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="42" cy="68" r="3" fill="#ff3eb5" opacity="0.6"/>
+          <circle cx="58" cy="68" r="3" fill="#ff3eb5" opacity="0.6"/>
+        </g>
+        <!-- mouth: sad -->
+        <g class="mouth mouth-sad" style="display:none">
+          <path d="M 32 72 Q 50 60 68 72" fill="none" stroke="#1f1d2c" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <!-- body -->
+        <rect x="25" y="86" width="50" height="34" rx="6" fill="#9b5cff" stroke="#1f1d2c" stroke-width="4"/>
+        <!-- chest light -->
+        <circle cx="50" cy="103" r="6" fill="#ffe14d" stroke="#1f1d2c" stroke-width="2">
+          <animate attributeName="fill" values="#ffe14d;#00d4ff;#ffe14d" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+
+      <div class="bubble">
+        <div class="robot-talk" id="robotTalk"></div>
+        <div class="equation" id="equation"></div>
+        <div class="hint-chip" id="hintChip"></div>
+      </div>
+    </div>
+
+    <!-- Build-mode running total (hidden by default) -->
+    <div class="build-total" id="buildTotal" hidden>
+      <span class="build-label" id="buildLabel">Sayın:</span>
+      <span class="build-sum" id="buildSum">0</span>
+      <div class="build-chips" id="buildChips"></div>
+    </div>
+
+    <!-- Card pool (decompose / build modes) -->
+    <div class="card-pool" id="cardPool" hidden>
+      <div class="pool-label" id="poolLabel"></div>
+    </div>
+
+    <!-- Action row (Check / Clear) -->
+    <div class="action-row" id="actionRow" hidden>
+      <button class="action-btn clear" id="clearBtn" type="button">🧹 Temizle</button>
+      <button class="action-btn check" id="checkBtn" type="button">✓ Cevabı Kontrol Et</button>
+    </div>
+
+    <!-- Multiple-choice row -->
+    <div class="mc-row" id="mcRow" hidden></div>
+
+    <!-- Feedback -->
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+
+  </main>
+
+  <!-- ============ Reward modal ============ -->
+  <div class="reward-modal" id="rewardModal" hidden
+       role="dialog" aria-modal="true" aria-labelledby="rewardTitleEl">
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <div class="reward-card">
+      <h2 id="rewardTitleEl">🤖 Robot Diyor: KAZANDIN! 🎉</h2>
+      <div class="reward-image-wrap" id="rewardImageWrap"></div>
+      <p class="reward-msg-text" id="rewardMsgEl">Müthiş ayrıştırma, matematik mühendisi!</p>
+      <button class="play-again" id="playAgainBtn" type="button">Tekrar Oyna</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================================
+   ROBOT DECOMPOSER / ROBOT AYRIŞTIRICI — game logic
+   ========================================================================= */
+(() => {
+  'use strict';
+
+  /* ---------- Config ---------- */
+  const TARGET_PROGRESS = 10;
+  const INCREMENT_RIGHT = 1;
+  const DECREMENT_WRONG = 1;
+  const FEEDBACK_DELAY  = 1200;
+
+  /* Stage thresholds for progressive difficulty */
+  const DIFFICULTY_THRESHOLDS = { medium: 3, hard: 6 };
+
+  /* Reward images — paths relative to games/<slug>.html */
+  const REWARDS = [
+    { src: '../images/1tl.jpg',  weight: 10, label: '1 TL'  },
+    { src: '../images/5tl.jpg',  weight: 50, label: '5 TL'  },
+    { src: '../images/10tl.jpg', weight: 20, label: '10 TL' },
+    { src: '../images/20tl.jpg', weight: 20, label: '20 TL' },
+  ];
+
+  /* ---------- Bilingual strings ---------- */
+  const STRINGS = {
+    en: {
+      title:      '🤖 Robot Decomposer',
+      langToggle: 'TR',
+      diffEasy:   'Easy',
+      diffMedium: 'Medium',
+      diffHard:   'Hard',
+
+      poolLabelDecompose: '👆 Tap a card, then tap a slot — or drag it into place',
+      poolLabelBuild:     '👆 Tap cards to add them to your number',
+      clearBtn:    '🧹 Clear',
+      checkBtn:    '✓ Check Answer',
+      buildLabel:  'Your number:',
+
+      instrDecompose:   'Decompose this number into TENS and ONES!',
+      instrCompose:     'Compose this expression! What number is it?',
+      instrMissing:     'Find the MISSING PART!',
+      instrNonstandard: 'TRICKY MODE! 🔥 Think carefully...',
+      instrBuild:       'Build this number by tapping cards!',
+
+      hintDecompose:   (t, o)         => `Hint: ${t} tens + ${o} ones`,
+      hintCompose:     (tens, tc, o)  => `Hint: ${tens} means ${tc} tens, plus ${o} ones`,
+      hintMissingTens: (n, tc)        => `${n} has ${tc} tens — tens means groups of 10!`,
+      hintMissingOnes: (n, o)         => `${n} has ${o} ones — single cubes!`,
+      hintNSremaining: (st, n)        => `${st} + ? = ${n} → count up from ${st}`,
+      hintNSshifted:   (rem, n)       => `? + ${rem} = ${n} → think: ${n} minus ${rem}`,
+      hintBuild:       (n)            => `Add cards until your sum equals ${n}. Tap a chip to remove it.`,
+
+      fillBoth:  '🤖 Fill both slots first!',
+      tapCards:  '🤖 Tap some cards first!',
+
+      praises: {
+        decompose:   ['🤖 PERFECT DECOMPOSITION!', '⭐ Tens and ones — nailed it!', '✨ Excellent breakdown!'],
+        compose:     ['🤖 PERFECT COMPOSITION!', '⭐ You assembled it right!', '✨ Great combining!'],
+        missing:     ['🤖 MISSING PART FOUND!', '⭐ Detective work!', '✨ Place-value pro!'],
+        nonstandard: ['🤖 TRICKY ONE SOLVED! 🔥', '⭐ You saw through the trap!', '✨ Master decomposer!'],
+        build:       ['🤖 BUILT TO SPEC!', '⭐ Engineering perfection!', '✨ Robot approves!'],
+      },
+
+      wrongNonstandard: (a) => `🤖 Tricky! The answer was ${a}. Look at the hint!`,
+      wrongDefault:     (a) => `🤖 The answer was ${a}. Try the next one!`,
+
+      rewardTitle:   '🤖 Robot Says: YOU WON! 🎉',
+      rewardMsg:     'Amazing decomposing, math engineer!',
+      playAgain:     'Play Again',
+      rewardMissing: '(reward image missing)',
+    },
+    tr: {
+      title:      '🤖 Robot Ayrıştırıcı',
+      langToggle: 'EN',
+      diffEasy:   'Kolay',
+      diffMedium: 'Orta',
+      diffHard:   'Zor',
+
+      poolLabelDecompose: '👆 Bir kart seç, sonra bir boşluğa dokun — ya da sürükle!',
+      poolLabelBuild:     '👆 Sayını oluşturmak için kartlara dokun',
+      clearBtn:    '🧹 Temizle',
+      checkBtn:    '✓ Cevabı Kontrol Et',
+      buildLabel:  'Sayın:',
+
+      instrDecompose:   'Bu sayıyı ONLUKLARA ve BİRLİKLERE ayır!',
+      instrCompose:     'Bu ifadeyi birleştir! Hangi sayı?',
+      instrMissing:     'EKSİK PARÇAYI bul!',
+      instrNonstandard: 'ZOR MOD! 🔥 Dikkatli düşün...',
+      instrBuild:       'Kartlara dokunarak bu sayıyı oluştur!',
+
+      hintDecompose:   (t, o)        => `İpucu: ${t} onluk + ${o} birlik`,
+      hintCompose:     (tens, tc, o) => `İpucu: ${tens} sayısı ${tc} onluk demek; artı ${o} birlik`,
+      hintMissingTens: (n, tc)       => `${n} sayısında ${tc} onluk var — onluk, 10'luk gruplardır!`,
+      hintMissingOnes: (n, o)        => `${n} sayısında ${o} birlik var — tek küpler!`,
+      hintNSremaining: (st, n)       => `${st} + ? = ${n} → ${st}'den yukarı say`,
+      hintNSshifted:   (rem, n)      => `? + ${rem} = ${n} → düşün: ${n} eksi ${rem}`,
+      hintBuild:       (n)           => `Toplamın ${n} olana kadar kart ekle. Çıkarmak için çipe dokun.`,
+
+      fillBoth:  '🤖 Önce iki boşluğu doldur!',
+      tapCards:  '🤖 Önce kartlara dokun!',
+
+      praises: {
+        decompose:   ['🤖 MÜKEMMEL AYRIŞTIRMA!', '⭐ Onluklar ve birlikler — tam isabet!', '✨ Harika parçalama!'],
+        compose:     ['🤖 MÜKEMMEL BİRLEŞTİRME!', '⭐ Doğru bir araya getirdin!', '✨ Harika kombinasyon!'],
+        missing:     ['🤖 EKSİK PARÇA BULUNDU!', '⭐ Dedektif çalışması!', '✨ Yer değeri ustası!'],
+        nonstandard: ['🤖 ZOR SORU ÇÖZÜLDÜ! 🔥', '⭐ Tuzağı gördün!', '✨ Usta ayrıştırıcı!'],
+        build:       ['🤖 TAM SPEC\'E GÖRE!', '⭐ Mühendislik harikası!', '✨ Robot onaylıyor!'],
+      },
+
+      wrongNonstandard: (a) => `🤖 Zor! Cevap ${a} idi. İpucuna bak!`,
+      wrongDefault:     (a) => `🤖 Cevap ${a} idi. Bir sonrakine geç!`,
+
+      rewardTitle:   '🤖 Robot Diyor: KAZANDIN! 🎉',
+      rewardMsg:     'Müthiş ayrıştırma, matematik mühendisi!',
+      playAgain:     'Tekrar Oyna',
+      rewardMissing: '(ödül resmi eksik)',
+    },
+  };
+
+  /* ---------- Language state ---------- */
+  const STORAGE_KEY = 'mf_lang';
+  let lang = localStorage.getItem(STORAGE_KEY) || 'tr';
+
+  /* String helper — plain key or function call */
+  const S = (k, ...args) => {
+    const v = STRINGS[lang][k];
+    return typeof v === 'function' ? v(...args) : (v !== undefined ? v : k);
+  };
+
+  /* ---------- Helpers ---------- */
+  const rand  = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+  const pick  = (arr)  => arr[Math.floor(Math.random() * arr.length)];
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* ---------- Question generators ---------- */
+
+  /* Type A: Decompose to expanded form via drag/tap cards
+     "47 = [_] + [_]" → slots accept 40 and 7 */
+  function genDecompose() {
+    const n    = rand(11, 99);
+    const tens = Math.floor(n / 10) * 10;
+    const ones = n % 10;
+    const correctCards = [tens, ones];
+
+    const distractors = new Set();
+    [Math.floor(n / 10), tens + 10, tens - 10, ones + 1, ones - 1, n].forEach(v => {
+      if (v >= 1 && v <= 99 && !correctCards.includes(v)) distractors.add(v);
+    });
+    const distractorList = shuffle([...distractors]).slice(0, 4);
+
+    return {
+      type: 'decompose',
+      target: n,
+      correctCards,
+      cards: shuffle([...correctCards, ...distractorList]),
+      acceptCommutative: true,
+      instrKey: 'instrDecompose',
+      hintFn: () => STRINGS[lang].hintDecompose(Math.floor(n / 10), n % 10),
+      equationHtml: `<span class="eq-num">${n}</span> <span class="eq-op">=</span> <span class="slot empty" data-slot="0"></span> <span class="eq-op">+</span> <span class="slot empty" data-slot="1"></span>`,
+    };
+  }
+
+  /* Type B: Compose from parts — multiple choice
+     "40 + 7 = ?" */
+  function genCompose() {
+    const n    = rand(11, 99);
+    const tens = Math.floor(n / 10) * 10;
+    const ones = n % 10;
+    const correct = n;
+
+    const distractors = new Set([
+      Math.floor(n / 10) + ones,
+      (n % 10) * 10 + Math.floor(n / 10),
+      n + 10,
+      n - 10,
+      tens,
+    ]);
+    distractors.delete(correct);
+    const distractorList = shuffle([...distractors].filter(d => d >= 10 && d <= 99)).slice(0, 3);
+    while (distractorList.length < 3) {
+      const r = rand(10, 99);
+      if (r !== correct && !distractorList.includes(r)) distractorList.push(r);
+    }
+
+    return {
+      type: 'compose',
+      target: n,
+      correct,
+      choices: shuffle([correct, ...distractorList]),
+      instrKey: 'instrCompose',
+      hintFn: () => STRINGS[lang].hintCompose(tens, Math.floor(n / 10), ones),
+      equationHtml: `<span class="eq-num">${tens}</span> <span class="eq-op">+</span> <span class="eq-num">${ones}</span> <span class="eq-op">=</span> <span class="eq-num">?</span>`,
+    };
+  }
+
+  /* Type C: Missing part — multiple choice
+     "47 = [?] + 7"  or  "60 + [?] = 68" */
+  function genMissingPart() {
+    const n    = rand(11, 99);
+    const tens = Math.floor(n / 10) * 10;
+    const ones = n % 10;
+    const missingTens = Math.random() < 0.5;
+    const correct = missingTens ? tens : ones;
+
+    const eqHtml = missingTens
+      ? `<span class="eq-num">${n}</span> <span class="eq-op">=</span> <span class="eq-num">?</span> <span class="eq-op">+</span> <span class="eq-num">${ones}</span>`
+      : `<span class="eq-num">${tens}</span> <span class="eq-op">+</span> <span class="eq-num">?</span> <span class="eq-op">=</span> <span class="eq-num">${n}</span>`;
+
+    const distractors = new Set();
+    if (missingTens) {
+      distractors.add(Math.floor(n / 10));
+      distractors.add(tens + 10);
+      distractors.add(tens - 10);
+      distractors.add(ones);
+    } else {
+      distractors.add(ones + 1);
+      distractors.add(ones - 1);
+      distractors.add(tens / 10);
+      distractors.add(10 - ones);
+    }
+    distractors.delete(correct);
+    const distractorList = shuffle([...distractors].filter(d => d >= 0 && d <= 99)).slice(0, 3);
+    while (distractorList.length < 3) {
+      const r = missingTens ? rand(1, 9) * 10 : rand(1, 9);
+      if (r !== correct && !distractorList.includes(r)) distractorList.push(r);
+    }
+
+    return {
+      type: 'missing',
+      target: n,
+      correct,
+      choices: shuffle([correct, ...distractorList]),
+      instrKey: 'instrMissing',
+      hintFn: missingTens
+        ? () => STRINGS[lang].hintMissingTens(n, Math.floor(n / 10))
+        : () => STRINGS[lang].hintMissingOnes(n, ones),
+      equationHtml: eqHtml,
+    };
+  }
+
+  /* Type D: Non-standard decomposition (the tricky one!)
+     "73 = 60 + ?" where answer is 13, not 3 */
+  function genNonStandard() {
+    const n            = rand(20, 99);
+    const standardTens = Math.floor(n / 10);
+    const shiftedTensCount = standardTens - rand(1, Math.min(2, standardTens - 1));
+    const shiftedTens  = shiftedTensCount * 10;
+    const remaining    = n - shiftedTens;
+
+    const askForRemaining = Math.random() < 0.5;
+    const correct = askForRemaining ? remaining : shiftedTens;
+    const eqHtml  = askForRemaining
+      ? `<span class="eq-num">${n}</span> <span class="eq-op">=</span> <span class="eq-num">${shiftedTens}</span> <span class="eq-op">+</span> <span class="eq-num">?</span>`
+      : `<span class="eq-num">${n}</span> <span class="eq-op">=</span> <span class="eq-num">?</span> <span class="eq-op">+</span> <span class="eq-num">${remaining}</span>`;
+
+    const trap = askForRemaining ? (n % 10) : (Math.floor(n / 10) * 10);
+    const distractors = new Set([trap]);
+    distractors.add(correct + 10);
+    distractors.add(correct - 10);
+    distractors.add(correct + 1);
+    distractors.delete(correct);
+    const distractorList = shuffle([...distractors].filter(d => d >= 0 && d <= 99)).slice(0, 3);
+    while (distractorList.length < 3) {
+      const r = rand(1, 99);
+      if (r !== correct && !distractorList.includes(r)) distractorList.push(r);
+    }
+
+    return {
+      type: 'nonstandard',
+      target: n,
+      correct,
+      choices: shuffle([correct, ...distractorList]),
+      instrKey: 'instrNonstandard',
+      hintFn: askForRemaining
+        ? () => STRINGS[lang].hintNSremaining(shiftedTens, n)
+        : () => STRINGS[lang].hintNSshifted(remaining, n),
+      equationHtml: eqHtml,
+    };
+  }
+
+  /* Type E: Build the number by tapping multiple value cards */
+  function genBuildCards() {
+    const n    = rand(11, 99);
+    const tens = Math.floor(n / 10) * 10;
+    const ones = n % 10;
+
+    const cardPool = new Set([tens, ones]);
+    [10, 20, tens - 10, tens + 10, ones + 1, ones - 1, Math.floor(n / 10)].forEach(v => {
+      if (v >= 1 && v <= 99) cardPool.add(v);
+    });
+    cardPool.delete(0);
+    const cards = shuffle([...cardPool]).slice(0, 7);
+    if (!cards.includes(tens)) cards[0] = tens;
+    if (!cards.includes(ones)) cards[1] = ones;
+
+    return {
+      type: 'build',
+      target: n,
+      cards: shuffle(cards),
+      instrKey: 'instrBuild',
+      hintFn: () => STRINGS[lang].hintBuild(n),
+      equationHtml: `<span class="eq-op">Build:</span> <span class="eq-num">${n}</span>`,
+    };
+  }
+
+  /* Difficulty-aware generator pool */
+  function pickGenerator(progress) {
+    let pool;
+    if (progress < DIFFICULTY_THRESHOLDS.medium) {
+      pool = [
+        { fn: genDecompose, weight: 55 },
+        { fn: genCompose,   weight: 45 },
+      ];
+    } else if (progress < DIFFICULTY_THRESHOLDS.hard) {
+      pool = [
+        { fn: genDecompose,   weight: 30 },
+        { fn: genCompose,     weight: 20 },
+        { fn: genMissingPart, weight: 35 },
+        { fn: genBuildCards,  weight: 15 },
+      ];
+    } else {
+      pool = [
+        { fn: genDecompose,   weight: 15 },
+        { fn: genCompose,     weight: 10 },
+        { fn: genMissingPart, weight: 25 },
+        { fn: genBuildCards,  weight: 20 },
+        { fn: genNonStandard, weight: 30 },
+      ];
+    }
+    const total = pool.reduce((s, g) => s + g.weight, 0);
+    let r = Math.random() * total;
+    for (const g of pool) {
+      r -= g.weight;
+      if (r <= 0) return g.fn;
+    }
+    return pool[0].fn;
+  }
+
+  function difficultyLabel(progress) {
+    if (progress < DIFFICULTY_THRESHOLDS.medium) return { text: S('diffEasy'),   cls: '' };
+    if (progress < DIFFICULTY_THRESHOLDS.hard)   return { text: S('diffMedium'), cls: 'medium' };
+    return { text: S('diffHard'), cls: 'hard' };
+  }
+
+  /* ---------- Game state ---------- */
+  const state = {
+    progress: 0,
+    current:  null,
+    locked:   false,
+    selectedCard:  null,
+    dragGhost:     null,
+    dragOriginCard: null,
+    slotFills:  {},
+    buildChips: [],
+  };
+
+  /* ---------- DOM refs ---------- */
+  const $robot          = document.querySelector('.robot');
+  const $robotTalk      = document.getElementById('robotTalk');
+  const $equation       = document.getElementById('equation');
+  const $hintChip       = document.getElementById('hintChip');
+  const $cardPool       = document.getElementById('cardPool');
+  const $buildTotal     = document.getElementById('buildTotal');
+  const $buildSum       = document.getElementById('buildSum');
+  const $buildLabel     = document.getElementById('buildLabel');
+  const $buildChips     = document.getElementById('buildChips');
+  const $actionRow      = document.getElementById('actionRow');
+  const $mcRow          = document.getElementById('mcRow');
+  const $checkBtn       = document.getElementById('checkBtn');
+  const $clearBtn       = document.getElementById('clearBtn');
+  const $feedback       = document.getElementById('feedback');
+  const $progressFill   = document.getElementById('progressFill');
+  const $progressText   = document.getElementById('progressText');
+  const $progressBar    = document.getElementById('progressBar');
+  const $difficultyBadge = document.getElementById('difficultyBadge');
+  const $rewardModal    = document.getElementById('rewardModal');
+  const $rewardImageWrap = document.getElementById('rewardImageWrap');
+  const $confettiLayer  = document.getElementById('confettiLayer');
+  const $playAgainBtn   = document.getElementById('playAgainBtn');
+  const $langToggleBtn  = document.getElementById('langToggleBtn');
+  const $gameTitle      = document.getElementById('gameTitle');
+  const $rewardTitleEl  = document.getElementById('rewardTitleEl');
+  const $rewardMsgEl    = document.getElementById('rewardMsgEl');
+
+  /* ---------- Apply static strings (init + every lang toggle) ---------- */
+  function applyStaticStrings() {
+    document.documentElement.lang   = lang;
+    document.title                   = S('title') + ' — 2. Sınıf / Grade 2';
+    $gameTitle.textContent           = S('title');
+    $langToggleBtn.textContent       = S('langToggle');
+    $clearBtn.textContent            = S('clearBtn');
+    $checkBtn.textContent            = S('checkBtn');
+    $buildLabel.textContent          = S('buildLabel');
+    $rewardTitleEl.textContent       = S('rewardTitle');
+    $rewardMsgEl.textContent         = S('rewardMsg');
+    $playAgainBtn.textContent        = S('playAgain');
+    const diff = difficultyLabel(state.progress);
+    $difficultyBadge.textContent     = diff.text;
+    $difficultyBadge.className       = 'difficulty-badge ' + diff.cls;
+  }
+
+  /* ---------- Progress bar ---------- */
+  function updateProgress() {
+    const pct = (state.progress / TARGET_PROGRESS) * 100;
+    $progressFill.style.width = pct + '%';
+    $progressText.textContent = state.progress + ' / ' + TARGET_PROGRESS;
+    $progressBar.setAttribute('aria-valuenow', String(state.progress));
+    const diff = difficultyLabel(state.progress);
+    $difficultyBadge.textContent = diff.text;
+    $difficultyBadge.className   = 'difficulty-badge ' + diff.cls;
+  }
+
+  /* ---------- Robot face state ---------- */
+  function setRobotState(s) {
+    $robot.setAttribute('data-state', s);
+    $robot.querySelectorAll('.mouth').forEach(m => m.style.display = 'none');
+    const active = $robot.querySelector('.mouth-' + s);
+    if (active) active.style.display = '';
+  }
+
+  /* ---------- Render a question ---------- */
+  function renderQuestion(q) {
+    state.locked      = false;
+    state.selectedCard = null;
+    state.slotFills   = {};
+    state.buildChips  = [];
+    clearDragGhost();
+    setRobotState('idle');
+
+    $feedback.textContent = '';
+    $feedback.className   = 'feedback';
+    $robotTalk.textContent = S(q.instrKey);
+    $equation.innerHTML    = q.equationHtml;
+    $hintChip.textContent  = q.hintFn();
+    $hintChip.classList.remove('visible');
+
+    /* Show hint automatically for harder modes after a delay */
+    if (q.type === 'nonstandard' || q.type === 'missing') {
+      setTimeout(() => { if (state.current === q) $hintChip.classList.add('visible'); }, 4000);
+    }
+
+    $cardPool.hidden   = true;
+    $actionRow.hidden  = true;
+    $mcRow.hidden      = true;
+    $buildTotal.hidden = true;
+    $mcRow.innerHTML   = '';
+    $cardPool.innerHTML = `<div class="pool-label" id="poolLabel">${S('poolLabelDecompose')}</div>`;
+    $buildChips.innerHTML = '';
+    $buildSum.textContent = '0';
+    $buildSum.classList.remove('match');
+
+    if      (q.type === 'decompose') renderDecomposeMode(q);
+    else if (q.type === 'build')     renderBuildMode(q);
+    else                             renderMCMode(q);
+  }
+
+  function renderDecomposeMode(q) {
+    $cardPool.hidden  = false;
+    $actionRow.hidden = false;
+    document.getElementById('poolLabel').textContent = S('poolLabelDecompose');
+    q.cards.forEach(value => $cardPool.appendChild(createCard(value)));
+    [...$equation.querySelectorAll('.slot')].forEach(slot =>
+      slot.addEventListener('click', () => onSlotClick(slot))
+    );
+  }
+
+  function renderBuildMode(q) {
+    $cardPool.hidden   = false;
+    $actionRow.hidden  = false;
+    $buildTotal.hidden = false;
+    document.getElementById('poolLabel').textContent = S('poolLabelBuild');
+    q.cards.forEach(value => $cardPool.appendChild(createCard(value, true)));
+  }
+
+  function renderMCMode(q) {
+    $mcRow.hidden = false;
+    q.choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mc-btn';
+      btn.textContent = String(c);
+      btn.dataset.value = String(c);
+      btn.addEventListener('click', () => onMCClicked(btn, c, q.correct));
+      $mcRow.appendChild(btn);
+    });
+  }
+
+  /* ---------- Card creation ---------- */
+  function createCard(value, isBuild) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'card';
+    card.textContent = String(value);
+    card.dataset.value = String(value);
+    card.tabIndex = 0;
+
+    if (isBuild) {
+      card.addEventListener('click', () => {
+        if (state.locked || card.classList.contains('used')) return;
+        addToBuild(value, card);
+      });
+    } else {
+      card.addEventListener('click', () => {
+        if (state.locked) return;
+        if (card.dataset.justDragged === '1') { delete card.dataset.justDragged; return; }
+        selectCard(card);
+      });
+      attachDragHandlers(card);
+    }
+    return card;
+  }
+
+  /* ---------- Decompose: tap-to-select + slot placement ---------- */
+  function selectCard(card) {
+    if (card.classList.contains('placed')) return;
+    if (state.selectedCard === card) {
+      card.classList.remove('selected');
+      state.selectedCard = null;
+      [...$equation.querySelectorAll('.slot')].forEach(s => s.classList.remove('target'));
+      return;
+    }
+    if (state.selectedCard) state.selectedCard.classList.remove('selected');
+    state.selectedCard = card;
+    card.classList.add('selected');
+    [...$equation.querySelectorAll('.slot')].forEach(s => {
+      if (s.classList.contains('empty')) s.classList.add('target');
+    });
+  }
+
+  function onSlotClick(slot) {
+    if (state.locked) return;
+    const slotIdx = slot.dataset.slot;
+    if (slot.classList.contains('filled')) {
+      const fill = state.slotFills[slotIdx];
+      if (fill && fill.cardNode) fill.cardNode.classList.remove('placed');
+      delete state.slotFills[slotIdx];
+      slot.classList.remove('filled');
+      slot.classList.add('empty');
+      slot.textContent = '';
+      return;
+    }
+    if (state.selectedCard) {
+      placeCardInSlot(state.selectedCard, slot);
+      state.selectedCard.classList.remove('selected');
+      state.selectedCard = null;
+      [...$equation.querySelectorAll('.slot')].forEach(s => s.classList.remove('target'));
+    }
+  }
+
+  function placeCardInSlot(card, slot) {
+    const value   = parseInt(card.dataset.value, 10);
+    const slotIdx = slot.dataset.slot;
+    slot.classList.remove('empty', 'target');
+    slot.classList.add('filled');
+    slot.textContent = String(value);
+    card.classList.add('placed');
+    state.slotFills[slotIdx] = { value, cardNode: card };
+  }
+
+  /* ---------- Pointer-based drag ---------- */
+  function attachDragHandlers(card) {
+    let startX = 0, startY = 0, isDragging = false, activePointerId = null;
+
+    card.addEventListener('pointerdown', e => {
+      if (state.locked || card.classList.contains('placed')) return;
+      startX = e.clientX; startY = e.clientY;
+      isDragging = false; activePointerId = e.pointerId;
+    });
+
+    card.addEventListener('pointermove', e => {
+      if (state.locked || activePointerId !== e.pointerId) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!isDragging && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+        isDragging = true;
+        startDragGhost(card, e.clientX, e.clientY);
+        card.setPointerCapture(e.pointerId);
+        [...$equation.querySelectorAll('.slot.empty')].forEach(s => s.classList.add('target'));
+      }
+      if (isDragging) {
+        updateDragGhost(e.clientX, e.clientY);
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        const slot  = under ? under.closest('.slot') : null;
+        [...$equation.querySelectorAll('.slot.empty')].forEach(s => {
+          s.style.transform = (s === slot) ? 'scale(1.15)' : '';
+        });
+      }
+    });
+
+    card.addEventListener('pointerup', e => {
+      if (activePointerId !== e.pointerId) return;
+      if (isDragging) {
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        const slot  = under ? under.closest('.slot') : null;
+        clearDragGhost();
+        [...$equation.querySelectorAll('.slot')].forEach(s => {
+          s.classList.remove('target'); s.style.transform = '';
+        });
+        if (slot && slot.classList.contains('empty')) placeCardInSlot(card, slot);
+        card.dataset.justDragged = '1';
+        setTimeout(() => { delete card.dataset.justDragged; }, 50);
+      }
+      isDragging = false; activePointerId = null;
+      try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+    });
+
+    card.addEventListener('pointercancel', () => {
+      isDragging = false; activePointerId = null;
+      clearDragGhost();
+      [...$equation.querySelectorAll('.slot')].forEach(s => {
+        s.classList.remove('target'); s.style.transform = '';
+      });
+    });
+  }
+
+  function startDragGhost(card, x, y) {
+    const ghost = card.cloneNode(true);
+    ghost.classList.add('drag-ghost');
+    ghost.style.left = x + 'px'; ghost.style.top = y + 'px';
+    ghost.style.width = card.offsetWidth + 'px'; ghost.style.height = card.offsetHeight + 'px';
+    document.body.appendChild(ghost);
+    state.dragGhost = ghost; state.dragOriginCard = card;
+    card.style.opacity = '0.35';
+  }
+  function updateDragGhost(x, y) {
+    if (!state.dragGhost) return;
+    state.dragGhost.style.left = x + 'px'; state.dragGhost.style.top = y + 'px';
+  }
+  function clearDragGhost() {
+    if (state.dragGhost)      { state.dragGhost.remove(); state.dragGhost = null; }
+    if (state.dragOriginCard) { state.dragOriginCard.style.opacity = ''; state.dragOriginCard = null; }
+  }
+
+  /* ---------- Build mode ---------- */
+  function addToBuild(value, cardNode) {
+    cardNode.classList.add('used');
+    const chip = document.createElement('div');
+    chip.className = 'build-chip';
+    chip.textContent = String(value);
+    chip.addEventListener('click', () => removeFromBuild(value, chip, cardNode));
+    $buildChips.appendChild(chip);
+    state.buildChips.push({ value, chipNode: chip, cardNode });
+    updateBuildSum();
+  }
+  function removeFromBuild(value, chip, cardNode) {
+    if (state.locked) return;
+    chip.remove();
+    cardNode.classList.remove('used');
+    const idx = state.buildChips.findIndex(b => b.chipNode === chip);
+    if (idx >= 0) state.buildChips.splice(idx, 1);
+    updateBuildSum();
+  }
+  function updateBuildSum() {
+    const sum = state.buildChips.reduce((s, b) => s + b.value, 0);
+    $buildSum.textContent = sum;
+    const match = state.current && sum === state.current.target && state.buildChips.length > 0;
+    $buildSum.classList.toggle('match', match);
+  }
+
+  /* ---------- Clear / Check ---------- */
+  function onClearClicked() {
+    if (state.locked || !state.current) return;
+    if (state.current.type === 'decompose') {
+      [...$equation.querySelectorAll('.slot')].forEach(s => {
+        s.classList.remove('filled', 'target'); s.classList.add('empty'); s.textContent = '';
+      });
+      [...$cardPool.querySelectorAll('.card')].forEach(c => c.classList.remove('placed', 'selected'));
+      state.selectedCard = null; state.slotFills = {};
+    } else if (state.current.type === 'build') {
+      [...$cardPool.querySelectorAll('.card')].forEach(c => c.classList.remove('used'));
+      $buildChips.innerHTML = ''; state.buildChips = []; updateBuildSum();
+    }
+  }
+
+  function onCheckClicked() {
+    if (state.locked || !state.current) return;
+
+    if (state.current.type === 'decompose') {
+      const filled = Object.values(state.slotFills);
+      if (filled.length < 2) {
+        [...$equation.querySelectorAll('.slot.empty')].forEach(s => {
+          s.classList.add('shake');
+          setTimeout(() => s.classList.remove('shake'), 400);
+        });
+        $feedback.textContent = S('fillBoth');
+        $feedback.className   = 'feedback bad';
+        return;
+      }
+      const vals    = filled.map(f => f.value).sort((a, b) => a - b);
+      const correct = state.current.correctCards.slice().sort((a, b) => a - b);
+      if (vals[0] === correct[0] && vals[1] === correct[1]) handleCorrect();
+      else handleWrong(null, `${state.current.correctCards[0]} + ${state.current.correctCards[1]}`);
+
+    } else if (state.current.type === 'build') {
+      const sum = state.buildChips.reduce((s, b) => s + b.value, 0);
+      if (state.buildChips.length === 0) {
+        $feedback.textContent = S('tapCards');
+        $feedback.className   = 'feedback bad';
+        return;
+      }
+      if (sum === state.current.target) handleCorrect();
+      else handleWrong(null, state.current.target);
+    }
+  }
+
+  /* ---------- Multiple-choice click ---------- */
+  function onMCClicked(btn, value, correctValue) {
+    if (state.locked) return;
+    if (value === correctValue) handleCorrect(btn);
+    else handleWrong(btn, correctValue);
+  }
+
+  /* ---------- Outcome handlers ---------- */
+  function handleCorrect(btn) {
+    state.locked   = true;
+    state.progress = Math.min(TARGET_PROGRESS, state.progress + INCREMENT_RIGHT);
+    setRobotState('happy');
+
+    const praiseList = STRINGS[lang].praises[state.current.type] || STRINGS[lang].praises.compose;
+    $feedback.textContent = pick(praiseList);
+    $feedback.className   = 'feedback good';
+    if (btn) btn.classList.add('correct-flash');
+
+    if (state.current.type === 'decompose') {
+      [...$equation.querySelectorAll('.slot.filled')].forEach(s => {
+        s.style.background = 'var(--good)'; s.style.color = '#fff';
+      });
+    }
+    updateProgress();
+    if (state.progress >= TARGET_PROGRESS) setTimeout(showReward, 1000);
+    else                                    setTimeout(nextQuestion, FEEDBACK_DELAY);
+  }
+
+  function handleWrong(btn, correctDisplay) {
+    state.locked   = true;
+    state.progress = Math.max(0, state.progress - DECREMENT_WRONG);
+    setRobotState('sad');
+
+    const msgFn = state.current.type === 'nonstandard'
+      ? STRINGS[lang].wrongNonstandard
+      : STRINGS[lang].wrongDefault;
+    $feedback.textContent = msgFn(correctDisplay);
+    $feedback.className   = 'feedback bad';
+    if (btn) btn.classList.add('wrong-flash');
+    $hintChip.classList.add('visible');
+
+    if (['compose', 'missing', 'nonstandard'].includes(state.current.type)) {
+      [...$mcRow.querySelectorAll('.mc-btn')].forEach(b => {
+        if (parseInt(b.dataset.value, 10) === state.current.correct)
+          b.classList.add('correct-flash');
+      });
+    }
+    updateProgress();
+    setTimeout(nextQuestion, FEEDBACK_DELAY + 800);
+  }
+
+  /* ---------- Main loop ---------- */
+  function nextQuestion() {
+    const gen = pickGenerator(state.progress);
+    const q   = gen();
+    state.current = q;
+    renderQuestion(q);
+  }
+
+  /* ---------- Reward ---------- */
+  function chooseReward() {
+    const total = REWARDS.reduce((s, r) => s + r.weight, 0);
+    let r = Math.random() * total;
+    for (const reward of REWARDS) {
+      r -= reward.weight;
+      if (r <= 0) return reward;
+    }
+    return REWARDS[0];
+  }
+
+  function showReward() {
+    const reward = chooseReward();
+    $rewardImageWrap.innerHTML = '';
+    $rewardTitleEl.textContent = S('rewardTitle');
+    $rewardMsgEl.textContent   = S('rewardMsg');
+    $playAgainBtn.textContent  = S('playAgain');
+
+    /* Preload then append — avoids broken-image glyph on error */
+    const img = new Image();
+    img.alt = reward.label;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    img.onload  = () => { $rewardImageWrap.innerHTML = ''; $rewardImageWrap.appendChild(img); };
+    img.onerror = () => {
+      $rewardImageWrap.innerHTML =
+        `<div class="fallback">🪙<br>${reward.label}<br>` +
+        `<span style="font-size:0.7rem;opacity:0.7;">${S('rewardMissing')}</span></div>`;
+    };
+    img.src = reward.src;
+
+    spawnConfetti();
+    $rewardModal.hidden = false;
+    $playAgainBtn.focus();
+  }
+
+  function spawnConfetti() {
+    $confettiLayer.innerHTML = '';
+    const colors = ['#00d4ff', '#ff3eb5', '#ffe14d', '#9b5cff', '#4caf50', '#ff7a59'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti-piece';
+      c.style.left = Math.random() * 100 + '%';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (2 + Math.random() * 2) + 's';
+      c.style.animationDelay    = (Math.random() * 0.6) + 's';
+      c.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+      $confettiLayer.appendChild(c);
+    }
+  }
+
+  /* ---------- Reset ---------- */
+  function resetGame() {
+    state.progress = 0;
+    state.locked   = false;
+    updateProgress();
+    $rewardModal.hidden = true;
+    $confettiLayer.innerHTML = '';
+    nextQuestion();
+  }
+
+  /* ---------- Language toggle ---------- */
+  $langToggleBtn.addEventListener('click', () => {
+    lang = (lang === 'tr') ? 'en' : 'tr';
+    localStorage.setItem(STORAGE_KEY, lang);
+    applyStaticStrings();
+    if (state.current) renderQuestion(state.current);
+  });
+
+  /* ---------- Keyboard support ---------- */
+  document.addEventListener('keydown', e => {
+    if (state.locked || !state.current) return;
+    if ((e.target || {}).tagName === 'INPUT') return;
+    const q = state.current;
+    if (['compose', 'missing', 'nonstandard'].includes(q.type)) {
+      if (['1','2','3','4'].includes(e.key)) {
+        const idx = parseInt(e.key, 10) - 1;
+        const btns = $mcRow.querySelectorAll('.mc-btn');
+        if (btns[idx]) btns[idx].click();
+      }
+    } else {
+      if (e.key === 'Enter')  onCheckClicked();
+      if (e.key === 'Escape') onClearClicked();
+    }
+  });
+
+  /* ---------- Init ---------- */
+  $checkBtn.addEventListener('click', onCheckClicked);
+  $clearBtn.addEventListener('click', onClearClicked);
+  $playAgainBtn.addEventListener('click', resetGame);
+
+  applyStaticStrings();
+  updateProgress();
+  nextQuestion();
+
+})();
+</script>
+</body>
+</html>

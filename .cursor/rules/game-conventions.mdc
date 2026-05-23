@@ -1,0 +1,132 @@
+---
+description: Structural conventions for every math game: file location, single-file rule, EN/TR i18n, infinite progress loop, weighted-random reward modal, and reward image filenames.
+globs: games/**/*.html
+alwaysApply: false
+---
+
+# Math Game Conventions
+
+Every game lives at `games/<game-slug>.html` and is a **single self-contained HTML file** with embedded `<style>` and `<script>`. No external libraries, fonts, build tools, or network requests. The only allowed local assets are the reward images in `images/`.
+
+## Bilingual (EN + TR) is mandatory
+
+Every game **must** ship with both English and Turkish strings and a header language toggle. Pattern (copy from `@games/number_city.html`):
+
+```js
+const STRINGS = {
+  en: { title: '...', instruction1: '...', praises: ['Great!','Awesome!'], wrongMsg: (a)=>`Answer was ${a}`, rewardTitle: 'You Won!', playAgain: 'Play Again', langToggle: 'TR', /* ... */ },
+  tr: { title: '...', instruction1: '...', praises: ['Harika!','Süper!'],  wrongMsg: (a)=>`Cevap ${a} idi`,    rewardTitle: 'Kazandın!', playAgain: 'Tekrar Oyna', langToggle: 'EN', /* ... */ },
+};
+let lang = localStorage.getItem('mf_lang') || 'tr';   // tr is the default
+const S = (k, ...a) => { const v = STRINGS[lang][k]; return typeof v === 'function' ? v(...a) : v; };
+```
+
+- Default language is **Turkish**. Persist in `localStorage` under a key prefixed `mf_` (e.g. `mf_lang`).
+- Language toggle button lives in the header and shows the *other* language code.
+- Re-render the current question after switching language so visible text updates immediately.
+- Every game has a meaningful bilingual title (e.g. EN: "Number City", TR: "Sayı Şehri").
+
+## Game loop
+
+- **Infinite randomized loop** — no fixed question count, no end-of-round score. The game ends only when the progress bar fills.
+- Configurable constants at the top of the script:
+
+```js
+const TARGET_PROGRESS = 10;
+const INCREMENT_RIGHT = 1;
+const DECREMENT_WRONG = 0;   // never below 0; pick 0 or 1 based on age
+const FEEDBACK_DELAY  = 1100;
+```
+
+- Correct answer: increment progress, show praise, animate `correctPulse`, advance.
+- Wrong answer: decrement (clamped to 0), show supportive message that includes the correct answer, animate `wrongShake`, advance.
+- Progress bar uses the red→yellow→green gradient (see `@.cursor/rules/design-spirit.mdc`).
+
+## Reward modal
+
+When `progress >= TARGET_PROGRESS`:
+1. Show modal with `popIn` animation, confetti layer, focus-trapped, ESC closes/restarts.
+2. Pick one reward via **weighted random**:
+
+```js
+const REWARDS = [
+  { src: '../images/1tl.jpg',  weight: 10, label: '1 TL'  },
+  { src: '../images/5tl.jpg',  weight: 50, label: '5 TL'  },
+  { src: '../images/10tl.jpg', weight: 20, label: '10 TL' },
+  { src: '../images/20tl.jpg', weight: 20, label: '20 TL' },
+];
+```
+
+3. **Path is `../images/<file>.jpg`, NOT `images/<file>.jpg`.** Games live in `games/`, so a bare `images/...` resolves to `games/images/...` in the browser, which doesn't exist. See "Lessons learned" below.
+4. **Preload then attach** the `<img>` — only append it to the DOM in `onload`, so a missing reward image shows the emoji fallback alone (no broken-image glyph). Pattern:
+
+```js
+const img = new Image();
+img.alt = reward.label;
+img.onload  = () => { $wrap.innerHTML = ''; $wrap.appendChild(img); };
+img.onerror = () => { $wrap.innerHTML = '<div class="fallback">🪙<br>' + reward.label + '<br><span>' + S('rewardMissing') + '</span></div>'; };
+img.src = reward.src;   // last — triggers loading
+```
+
+5. On image error show a friendly emoji fallback with the label and the localized "missing image" string.
+6. "Play Again" button (bilingual) resets progress to 0 and starts a new loop.
+
+> **Reward filenames on disk:** `1tl.jpg`, `5tl.jpg`, `10tl.jpg`, `20tl.jpg` (and an unused `5tltl.jpg`). Always use `../images/5tl.jpg` (not `5tlt.jpg`, not `5tltl.jpg`).
+
+## Accessibility & input
+
+- ARIA labels on every interactive element, localized through `STRINGS`.
+- Keyboard support: digits + Backspace + Enter for numpad questions, `A`/`B`/`C` for multiple choice.
+- Touch targets ≥ 90px tall. `user-select: none`, `-webkit-tap-highlight-color: transparent` on `<body>`.
+- `<meta viewport>` with `user-scalable=no`. Responsive via `clamp()` and a `max-width: 500px` breakpoint.
+
+## File header
+
+Start every game's `<style>` block with a banner like:
+
+```css
+/* =============================================================
+   <GAME NAME EN> / <GAME NAME TR> — Grade <N> Math Game
+   Target concept: <plain-English concept summary>
+   Curriculum: MAT.<x>.<y>.<z>
+   Single-file, no external libraries.
+   ============================================================= */
+```
+
+## Lessons learned (from real bugs caught in review)
+
+These are real mistakes that have shipped in this project. Read them before writing or editing a game.
+
+### 1. Reward image paths are `../images/...`, never `images/...`
+
+Games live in `games/<slug>.html`. A relative URL like `<img src="images/1tl.jpg">` resolves to `games/images/1tl.jpg` in the browser — that folder doesn't exist, so every reward silently falls back to "(reward image missing)". Always use `../images/<file>.jpg`.
+
+> Symptom: reward modal always shows the 🪙 emoji fallback even though the files are on disk at the project root.
+
+### 2. Preload the reward image; only append `<img>` on success
+
+The naive pattern `img.src = ...; wrap.appendChild(img);` causes the broken-image glyph to flash next to the fallback when the load fails. Set `img.onload` to be the moment you append, and `img.onerror` to swap the wrap's `innerHTML` to the fallback markup. Do not append the `<img>` eagerly.
+
+### 3. Every visible TR/EN string lives in `STRINGS`, even the ones that "look the same"
+
+ARIA labels, count labels, summary words (`onluk` / `birlik`, `tens` / `ones`), zone titles, toast messages, regroup announcements — **all** of them must flow through `S('key')`. Anything you hard-code in HTML or in a `gen*` function will silently stay in one language when the user toggles. Audit by checking every Turkish phrase is unique to the STRINGS table only.
+
+### 4. Turkish unit words are `onluk` / `birlik`, not `onlar` / `birler`
+
+`onlar` / `birler` are plural pronouns ("them" / "ones-the"). The base-ten unit words are **`onluk`** (a "ten") and **`birlik`** (a "one") — both singular, both used as `3 onluk + 2 birlik = 32`. Header chips can pluralize visually (`ONLUKLAR`, `BİRLİKLER`) but the inline summary uses the singular form.
+
+### 5. Don't put two `id` attributes on one element
+
+Easy to do when you're piecing together a button: `<button id="checkBtn" id="checkLabel">`. Browsers silently take the first one; the second never resolves and any `getElementById('checkLabel')` returns `null`, crashing later. Lint catches it. So do you, if you re-read the diff.
+
+### 6. Don't overload state field names mid-refactor
+
+If `state.locked` is a boolean lock-flag used everywhere as `if (state.locked) return;`, do not later reassign it to an object like `{ tens: 0, ones: 0 }` for a different purpose. Add a new field (e.g. `state.prefill`, `state.readOnly`) instead. Overloading silently makes every old check truthy and breaks the game in subtle ways.
+
+### 7. Localize ARIA labels too
+
+Aria text like `aria-label="Add one ten"` is read aloud by screen readers; it must switch with the language toggle. Put every ARIA string in `STRINGS` and re-apply them in `applyStaticStrings()`.
+
+### 8. After a regroup, clamp any prefilled counts
+
+In modes where the workspace starts with pre-filled blocks (e.g. `buildPartial`), automatic 10-ones-to-1-ten regrouping can consume some of the pre-filled ones. The pre-fill counter must be clamped (`prefill.ones = Math.min(prefill.ones, workspace.ones)`) so the remove button doesn't stay incorrectly disabled or enabled.

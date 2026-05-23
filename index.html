@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Matematik Şehri — Math Firas</title>
+<style>
+/* =========================================================================
+   MATH FIRAS — Launcher
+   Sunny-City-Cartoon design spirit (see DESIGN_SPIRIT.md)
+   ========================================================================= */
+
+/* -------- Design tokens (canonical palette, do not change) -------- */
+:root {
+  --sky-top:    #ffd9a8;
+  --sky-mid:    #ffb88c;
+  --sky-bottom: #87ceeb;
+  --sun:        #ffd23f;
+  --cloud:      #ffffff;
+  --road:       #3a3a4d;
+  --road-line:  #fff5b1;
+  --ink:        #1f1d2c;
+  --ink-soft:   #4a4760;
+  --good:       #4caf50;
+  --bad:        #ef4f4f;
+  --warm:       #ff7a59;
+  --b1: #ff5252;
+  --b2: #ffca28;
+  --b3: #66bb6a;
+  --b4: #42a5f5;
+  --b5: #ab47bc;
+  --b6: #ff9800;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+
+body {
+  font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", "Trebuchet MS", system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 35%, var(--sky-bottom) 100%);
+  background-attachment: fixed;
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* -------- Ambient layer (sun, clouds, skyline, road) -------- */
+.ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.sun {
+  position: absolute;
+  top: 90px;
+  right: 8%;
+  width: 80px;
+  height: 80px;
+  background: var(--sun);
+  border-radius: 50%;
+  box-shadow: 0 0 50px rgba(255,210,63,0.7), 4px 4px 0 var(--ink);
+  border: 4px solid var(--ink);
+}
+.cloud {
+  position: absolute;
+  background: var(--cloud);
+  border: 3px solid var(--ink);
+  border-radius: 50px;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.cloud::before, .cloud::after {
+  content: "";
+  position: absolute;
+  background: var(--cloud);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+}
+.cloud-1 { top: 100px; left: 5%;   width: 90px; height: 28px; animation: drift 50s linear infinite; }
+.cloud-1::before { width: 40px; height: 40px; top: -22px; left: 14px; }
+.cloud-1::after  { width: 30px; height: 30px; top: -16px; left: 50px; }
+.cloud-2 { top: 170px; left: 35%;  width: 70px; height: 22px; animation: drift 65s linear infinite; animation-delay: -25s; }
+.cloud-2::before { width: 32px; height: 32px; top: -18px; left: 10px; }
+.cloud-2::after  { width: 24px; height: 24px; top: -12px; left: 36px; }
+.cloud-3 { top: 130px; right: 22%; width: 80px; height: 26px; animation: drift 55s linear infinite; animation-delay: -15s; }
+.cloud-3::before { width: 36px; height: 36px; top: -20px; left: 12px; }
+.cloud-3::after  { width: 26px; height: 26px; top: -14px; left: 42px; }
+@keyframes drift {
+  0%   { transform: translateX(-200px); }
+  100% { transform: translateX(calc(100vw + 200px)); }
+}
+
+.skyline {
+  position: fixed;
+  bottom: 80px;
+  left: 0; right: 0;
+  height: 160px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 2vw;
+  pointer-events: none;
+  opacity: 0.55;
+  z-index: 0;
+}
+.skyline .b {
+  flex: 1;
+  margin: 0 3px;
+  border: 4px solid var(--ink);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  position: relative;
+}
+.skyline .b::before {
+  content: "";
+  position: absolute;
+  inset: 12px 10px auto 10px;
+  height: calc(100% - 18px);
+  background: radial-gradient(circle at center, var(--sun) 30%, transparent 31%) 0 0/20px 20px;
+  opacity: 0.7;
+}
+.skyline .b:nth-child(1)  { height: 90px;  background: var(--b1); }
+.skyline .b:nth-child(2)  { height: 130px; background: var(--b2); }
+.skyline .b:nth-child(3)  { height: 70px;  background: var(--b3); }
+.skyline .b:nth-child(4)  { height: 110px; background: var(--b4); }
+.skyline .b:nth-child(5)  { height: 90px;  background: var(--b5); }
+.skyline .b:nth-child(6)  { height: 140px; background: var(--b1); }
+.skyline .b:nth-child(7)  { height: 100px; background: var(--b6); }
+.skyline .b:nth-child(8)  { height: 130px; background: var(--b3); }
+.skyline .b:nth-child(9)  { height: 80px;  background: var(--b4); }
+.skyline .b:nth-child(10) { height: 120px; background: var(--b2); }
+
+.road {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 80px;
+  background: var(--road);
+  border-top: 4px solid var(--ink);
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.road::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 6px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(
+    to right,
+    var(--road-line) 0 40px,
+    transparent 40px 80px
+  );
+  animation: roadlines 1.5s linear infinite;
+}
+@keyframes roadlines { to { background-position: -80px 0; } }
+.car {
+  position: absolute;
+  bottom: 8px;
+  font-size: 3rem;
+  filter: drop-shadow(2px 2px 0 var(--ink));
+  animation: drive 10s linear infinite;
+}
+.car-1 { animation-duration: 10s; animation-delay: 0s; }
+.car-2 { animation: driveRev 8s linear infinite; animation-delay: -3s; bottom: 38px; }
+.car-3 { animation-duration: 13s; animation-delay: -2s; }
+@keyframes drive    { 0% { left: -80px; } 100% { left: calc(100% + 40px); } }
+@keyframes driveRev { 0% { left: calc(100% + 40px); transform: scaleX(-1); } 100% { left: -80px; transform: scaleX(-1); } }
+
+/* -------- Header -------- */
+header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: rgba(255,255,255,0.9);
+  border-bottom: 4px solid var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.brand {
+  font-size: clamp(1.25rem, 3.5vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-shadow: 2px 2px 0 var(--sun);
+  white-space: nowrap;
+}
+.lang-toggle {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 0.35rem 0.9rem;
+  background: var(--ink);
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  letter-spacing: 0.05em;
+  transition: background 0.15s;
+}
+.lang-toggle:hover { background: var(--ink-soft); }
+.lang-toggle:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+.lang-toggle:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+/* -------- Main -------- */
+main {
+  position: relative;
+  z-index: 2;
+  padding: 2rem 1.25rem 220px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.hero {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.hero h1 {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 900;
+  color: var(--warm);
+  text-shadow: 4px 4px 0 var(--ink);
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+.hero p {
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  font-weight: 700;
+  color: var(--ink);
+  background: rgba(255,255,255,0.85);
+  display: inline-block;
+  padding: 0.5rem 1.1rem;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.grade-section { margin-bottom: 2.5rem; }
+.grade-heading {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 900;
+  color: #fff;
+  background: var(--ink);
+  display: inline-block;
+  padding: 0.45rem 1.1rem;
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--sun);
+  margin-bottom: 1.25rem;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+/* -------- Game card -------- */
+.game-card {
+  position: relative;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 18px 18px 8px 8px;
+  padding: 1rem 1rem 1.1rem;
+  box-shadow: 6px 6px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  overflow: hidden;
+}
+.game-card::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 24px;
+  width: 8px;
+  height: 12px;
+  background: var(--ink);
+  border-radius: 4px 4px 0 0;
+}
+.game-card::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 8px;
+}
+.game-card.color-b1::after { background: var(--b1); }
+.game-card.color-b2::after { background: var(--b2); }
+.game-card.color-b3::after { background: var(--b3); }
+.game-card.color-b4::after { background: var(--b4); }
+.game-card.color-b5::after { background: var(--b5); }
+.game-card.color-b6::after { background: var(--b6); }
+
+.game-card:hover  { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
+.game-card:focus-within { outline: 3px solid var(--sun); outline-offset: 3px; }
+
+.game-card-head {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+}
+.chip {
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 0.2rem 0.55rem;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.chip.grade { background: var(--sun); color: var(--ink); }
+.chip.code  { background: var(--ink); color: #fff; }
+
+.game-title {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.summary {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  line-height: 1.3;
+  flex: 1;
+}
+.play-btn {
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 900;
+  text-decoration: none;
+  text-align: center;
+  padding: 0.7rem 1rem;
+  background: var(--good);
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.28);
+  letter-spacing: 0.03em;
+}
+.play-btn:hover  { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+.play-btn:active { transform: translate(2px, 2px);   box-shadow: 2px 2px 0 var(--ink); }
+.play-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+
+/* "Coming soon" placeholder (for cards listed without a built game yet) */
+.game-card.coming-soon { opacity: 0.55; filter: saturate(0.8); }
+.game-card.coming-soon .play-btn {
+  background: var(--ink-soft);
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* -------- Responsive -------- */
+@media (max-width: 500px) {
+  header { padding: 0.6rem 0.85rem; }
+  .brand { font-size: 1.15rem; }
+  .sun { width: 60px; height: 60px; top: 80px; }
+  .skyline { height: 110px; }
+  main { padding: 1.25rem 0.85rem 200px; }
+  .cards { grid-template-columns: 1fr; gap: 1rem; }
+}
+</style>
+</head>
+<body>
+
+  <!-- Ambient background layers (decorative) -->
+  <div class="ambient" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+  </div>
+  <div class="skyline" aria-hidden="true">
+    <div class="b"></div><div class="b"></div><div class="b"></div>
+    <div class="b"></div><div class="b"></div><div class="b"></div>
+    <div class="b"></div><div class="b"></div><div class="b"></div>
+    <div class="b"></div>
+  </div>
+  <div class="road" aria-hidden="true">
+    <div class="car car-1">🚗</div>
+    <div class="car car-2">🚙</div>
+    <div class="car car-3">🚕</div>
+  </div>
+
+  <header>
+    <div class="brand" data-en="🏙️ Math Firas" data-tr="🏙️ Matematik Firas">🏙️ Matematik Firas</div>
+    <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <h1 data-en="Math Adventures" data-tr="Matematik Maceraları">Matematik Maceraları</h1>
+      <p data-en="Pick a game and start playing!" data-tr="Bir oyun seç ve oynamaya başla!">Bir oyun seç ve oynamaya başla!</p>
+    </section>
+
+    <!-- =============================================================
+         GRADE 1
+         ============================================================= -->
+    <section class="grade-section" data-grade="1">
+      <h2 class="grade-heading" data-en="Grade 1" data-tr="1. Sınıf">1. Sınıf</h2>
+      <div class="cards">
+        <!-- Grade 1 games will be added here as they are built. -->
+      </div>
+    </section>
+
+    <!-- =============================================================
+         GRADE 2
+         ============================================================= -->
+    <section class="grade-section" data-grade="2">
+      <h2 class="grade-heading" data-en="Grade 2" data-tr="2. Sınıf">2. Sınıf</h2>
+      <div class="cards">
+
+        <article class="game-card color-b4" data-grade="2" data-code="MAT.2.1.1">
+          <div class="game-card-head">
+            <span class="chip grade" data-en="Grade 2" data-tr="2. Sınıf">2. Sınıf</span>
+            <span class="chip code">MAT.2.1.1</span>
+          </div>
+          <h3 class="game-title" data-en="🏙️ Number City" data-tr="🏙️ Sayı Şehri">🏙️ Sayı Şehri</h3>
+          <p class="summary"
+             data-en="Read and write numbers from 0 to 100 with base-ten blocks, number words, and bright buildings."
+             data-tr="0–100 arası sayıları onluk-birlik bloklarla, sayı sözcükleriyle ve rengarenk binalarla oku ve yaz.">
+             0–100 arası sayıları onluk-birlik bloklarla, sayı sözcükleriyle ve rengarenk binalarla oku ve yaz.
+          </p>
+          <a class="play-btn" href="games/number_city.html"
+             data-en="Play ▶" data-tr="Oyna ▶">Oyna ▶</a>
+        </article>
+
+      <article class="game-card color-b6" data-grade="2" data-code="MAT.2.1.2">
+          <div class="game-card-head">
+            <span class="chip grade" data-en="Grade 2" data-tr="2. Sınıf">2. Sınıf</span>
+            <span class="chip code">MAT.2.1.2</span>
+          </div>
+          <h3 class="game-title" data-en="🏗️ Base-Ten Builder" data-tr="🏗️ Onluk İnşaatçı">🏗️ Onluk İnşaatçı</h3>
+          <p class="summary"
+             data-en="Build two-digit numbers with tens rods and ones cubes. Learn place value through hands-on construction!"
+             data-tr="Onluk çubukları ve birlik küpleriyle iki basamaklı sayılar oluştur. Elişi inşaatla yer değerini öğren!">
+             Onluk çubukları ve birlik küpleriyle iki basamaklı sayılar oluştur. El üstü inşaatla yer değerini öğren!
+          </p>
+          <a class="play-btn" href="games/base-ten-builder.html"
+             data-en="Play ▶" data-tr="Oyna ▶">Oyna ▶</a>
+        </article>
+
+        <article class="game-card color-b5" data-grade="2" data-code="MAT.2.1.2">
+          <div class="game-card-head">
+            <span class="chip grade" data-en="Grade 2" data-tr="2. Sınıf">2. Sınıf</span>
+            <span class="chip code">MAT.2.1.2</span>
+          </div>
+          <h3 class="game-title" data-en="🤖 Robot Decomposer" data-tr="🤖 Robot Ayrıştırıcı">🤖 Robot Ayrıştırıcı</h3>
+          <p class="summary"
+             data-en="Drag cards to split numbers into tens and ones, compose them back, and tackle tricky non-standard decompositions!"
+             data-tr="Sayıları onluklara ve birliklere ayırmak için kartları sürükle, geri birleştir ve alışılmadık ayrıştırmalarla uğraş!">
+             Sayıları onluklara ve birliklere ayırmak için kartları sürükle, geri birleştir ve alışılmadık ayrıştırmalarla uğraş!
+          </p>
+          <a class="play-btn" href="games/robot-decomposer.html"
+             data-en="Play ▶" data-tr="Oyna ▶">Oyna ▶</a>
+        </article>
+
+      </div>
+    </section>
+
+  </main>
+
+<script>
+/* =========================================================================
+   Math Firas Launcher — bilingual toggle
+   ========================================================================= */
+(() => {
+  'use strict';
+
+  const STORAGE_KEY = 'mf_lang';
+  let lang = localStorage.getItem(STORAGE_KEY) || 'tr';
+
+  const $toggle = document.getElementById('langToggleBtn');
+
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-en][data-tr]').forEach(el => {
+      const txt = el.getAttribute('data-' + lang);
+      if (txt != null) el.textContent = txt;
+    });
+    $toggle.textContent = (lang === 'tr') ? 'EN' : 'TR';
+    document.title = (lang === 'tr')
+      ? 'Matematik Maceraları — Math Firas'
+      : 'Math Adventures — Math Firas';
+  }
+
+  $toggle.addEventListener('click', () => {
+    lang = (lang === 'tr') ? 'en' : 'tr';
+    localStorage.setItem(STORAGE_KEY, lang);
+    applyLang();
+  });
+
+  applyLang();
+})();
+</script>
+
+</body>
+</html>

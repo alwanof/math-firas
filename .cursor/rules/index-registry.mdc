@@ -1,0 +1,40 @@
+---
+description: Every new game in games/ must be registered in the root index.html launcher with a bilingual title, grade, curriculum code, and link. Keeps the launcher in sync with the games folder.
+alwaysApply: true
+---
+
+# Index Registry
+
+`index.html` (project root) is the **launcher** that links to every game in `games/`. Whenever a new game file is created, edited, renamed, or removed, update `index.html` in the same change.
+
+## Required fields per game card
+
+Each card in `index.html` must include:
+
+- **Bilingual title** — both EN and TR (e.g. `Number City` / `Sayı Şehri`).
+- **Grade tag** — `Grade 1` or `Grade 2`.
+- **Curriculum code** — e.g. `MAT.2.1.1` (from `@turkish-primary-math-curriculum-grades-1-2.md`).
+- **One-sentence concept summary** (bilingual or in the active launcher language).
+- **Anchor `<a href="games/<slug>.html">`** that opens the game in the same tab.
+- **Themed color tile** — pick one of `--b1`..`--b6` from the design palette so the launcher feels like a rainbow city block.
+
+## Look & feel
+
+`index.html` is itself a Sunny-City-Cartoon page — same palette, same sticker borders, same ambient sky/clouds/skyline. See `@.cursor/rules/design-spirit.mdc`.
+
+## Sort & group
+
+- Group cards into two sections: **Grade 1** then **Grade 2**.
+- Within a grade, sort by the numeric order of the curriculum code (e.g. `MAT.1.1.1` before `MAT.1.1.2`).
+
+## Bilingual launcher
+
+The launcher itself supports the same EN/TR toggle pattern as the games (`localStorage` key `mf_lang`). Cards switch their visible language with the toggle.
+
+## Checklist when adding a game
+
+- [ ] File saved at `games/<kebab-slug>.html`
+- [ ] Card added in the correct grade section of `index.html`
+- [ ] Tile color assigned from `--b1`..`--b6`
+- [ ] Bilingual title, grade tag, curriculum code, summary all present
+- [ ] Link tested — it loads the game

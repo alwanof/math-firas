@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>Sayı Şehri — Grade 2 Math Game</title>
+<style>
+/* =========================================================================
+   NUMBER CITY — Grade 2 Math Game
+   Target concept: Read and write numbers 0–100 (Turkish curriculum MAT.2.1.1)
+   Single-file, no external libraries.
+   ========================================================================= */
+
+/* -------- Design tokens -------- */
+:root {
+  --sky-top:    #ffd9a8;
+  --sky-mid:    #ffb88c;
+  --sky-bottom: #87ceeb;
+  --sun:        #ffd23f;
+  --cloud:      #ffffff;
+  --road:       #3a3a4d;
+  --road-line:  #fff5b1;
+  --ink:        #1f1d2c;
+  --ink-soft:   #4a4760;
+  --good:       #4caf50;
+  --bad:        #ef4f4f;
+  --warm:       #ff7a59;
+  --tens-block: #ff7a59;
+  --tens-edge:  #b8401e;
+  --ones-block: #3f86ff;
+  --ones-edge:  #1b4dad;
+  --b1: #ff5252;
+  --b2: #ffca28;
+  --b3: #66bb6a;
+  --b4: #42a5f5;
+  --b5: #ab47bc;
+  --b6: #ff9800;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", "Trebuchet MS", system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 35%, var(--sky-bottom) 100%);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------- Header & progress bar -------- */
+header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255,255,255,0.85);
+  border-bottom: 4px solid var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.title {
+  font-size: clamp(1.2rem, 3.5vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-shadow: 2px 2px 0 var(--sun);
+  white-space: nowrap;
+}
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
+  max-width: 380px;
+}
+.progress-track {
+  flex: 1;
+  height: 22px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff5252 0%, #ffca28 50%, #66bb6a 100%);
+  transition: width 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+.progress-text {
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* -------- Language toggle -------- */
+.lang-toggle {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 0.3rem 0.8rem;
+  background: var(--ink);
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.lang-toggle:hover { background: var(--ink-soft); }
+.lang-toggle:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+.lang-toggle:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+/* -------- Decorative city background -------- */
+.city-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.sun {
+  position: absolute;
+  top: 70px;
+  right: 8%;
+  width: 80px;
+  height: 80px;
+  background: var(--sun);
+  border-radius: 50%;
+  box-shadow: 0 0 50px rgba(255,210,63,0.7), 4px 4px 0 var(--ink);
+  border: 4px solid var(--ink);
+}
+.cloud {
+  position: absolute;
+  background: var(--cloud);
+  border: 3px solid var(--ink);
+  border-radius: 50px;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.cloud::before, .cloud::after {
+  content: "";
+  position: absolute;
+  background: var(--cloud);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+}
+.cloud-1 { top: 80px;  left: 5%;   width: 90px; height: 28px; animation: drift 50s linear infinite; }
+.cloud-1::before { width: 40px; height: 40px; top: -22px; left: 14px; }
+.cloud-1::after  { width: 30px; height: 30px; top: -16px; left: 50px; }
+.cloud-2 { top: 150px; left: 35%;  width: 70px; height: 22px; animation: drift 65s linear infinite; animation-delay: -25s; }
+.cloud-2::before { width: 32px; height: 32px; top: -18px; left: 10px; }
+.cloud-2::after  { width: 24px; height: 24px; top: -12px; left: 36px; }
+.cloud-3 { top: 110px; right: 25%; width: 80px; height: 26px; animation: drift 55s linear infinite; animation-delay: -15s; }
+.cloud-3::before { width: 36px; height: 36px; top: -20px; left: 12px; }
+.cloud-3::after  { width: 26px; height: 26px; top: -14px; left: 42px; }
+@keyframes drift {
+  0%   { transform: translateX(-200px); }
+  100% { transform: translateX(calc(100vw + 200px)); }
+}
+
+.skyline {
+  position: absolute;
+  bottom: 80px;
+  left: 0; right: 0;
+  height: 180px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 2vw;
+  pointer-events: none;
+  opacity: 0.6;
+}
+.skyline .b {
+  flex: 1;
+  margin: 0 3px;
+  border: 4px solid var(--ink);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  position: relative;
+}
+.skyline .b::before { /* windows */
+  content: "";
+  position: absolute;
+  inset: 12px 10px auto 10px;
+  height: calc(100% - 18px);
+  background:
+    radial-gradient(circle at center, var(--sun) 30%, transparent 31%) 0 0/20px 20px;
+  opacity: 0.7;
+}
+.skyline .b:nth-child(1)  { height: 90px;  background: var(--b1); }
+.skyline .b:nth-child(2)  { height: 130px; background: var(--b2); }
+.skyline .b:nth-child(3)  { height: 70px;  background: var(--b3); }
+.skyline .b:nth-child(4)  { height: 110px; background: var(--b4); }
+.skyline .b:nth-child(5)  { height: 90px;  background: var(--b5); }
+.skyline .b:nth-child(6)  { height: 150px; background: var(--b1); }
+.skyline .b:nth-child(7)  { height: 100px; background: var(--b6); }
+.skyline .b:nth-child(8)  { height: 140px; background: var(--b3); }
+.skyline .b:nth-child(9)  { height: 80px;  background: var(--b4); }
+.skyline .b:nth-child(10) { height: 120px; background: var(--b2); }
+
+/* -------- Road & cars -------- */
+.road {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 80px;
+  background: var(--road);
+  border-top: 4px solid var(--ink);
+  z-index: 1;
+  overflow: hidden;
+}
+.road::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 6px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(
+    to right,
+    var(--road-line) 0 40px,
+    transparent 40px 80px
+  );
+  animation: roadlines 1.5s linear infinite;
+}
+@keyframes roadlines { to { background-position: -80px 0; } }
+.car {
+  position: absolute;
+  bottom: 8px;
+  font-size: 3rem;
+  filter: drop-shadow(2px 2px 0 var(--ink));
+  animation: drive 10s linear infinite;
+}
+.car-1 { animation-duration: 10s; animation-delay: 0s; }
+.car-2 { animation: driveRev 8s linear infinite; animation-delay: -3s; bottom: 38px; }
+.car-3 { animation-duration: 13s; animation-delay: -2s; }
+@keyframes drive    { 0% { left: -80px; } 100% { left: calc(100% + 40px); } }
+@keyframes driveRev { 0% { left: calc(100% + 40px); transform: scaleX(-1); } 100% { left: -80px; transform: scaleX(-1); } }
+
+/* -------- Main game area -------- */
+main {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  padding-bottom: 110px;
+  overflow-y: auto;
+}
+
+.question-area {
+  background: rgba(255,255,255,0.96);
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  padding: 1rem 1.5rem;
+  box-shadow: 6px 6px 0 var(--ink);
+  width: min(720px, 92vw);
+  text-align: center;
+}
+.instruction {
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--ink-soft);
+}
+.question-display {
+  font-weight: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 90px;
+}
+
+/* -------- Base-10 block visualization (tens rods + ones cubes) -------- */
+.blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 8px;
+  max-width: 100%;
+}
+.tens-rod {
+  display: grid;
+  grid-template-rows: repeat(10, 1fr);
+  width: 18px;
+  height: 100px;
+  background: var(--tens-block);
+  border: 2px solid var(--tens-edge);
+  border-radius: 4px;
+}
+.tens-rod > span { border-bottom: 1px solid var(--tens-edge); }
+.tens-rod > span:last-child { border-bottom: none; }
+.ones-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 70px;
+  align-items: flex-end;
+}
+.ones-cube {
+  width: 14px;
+  height: 14px;
+  background: var(--ones-block);
+  border: 2px solid var(--ones-edge);
+  border-radius: 3px;
+}
+.zero-marker {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+
+/* -------- Word card (Turkish number word) -------- */
+.word-card {
+  font-size: clamp(1.4rem, 5vw, 2.6rem);
+  padding: 0.5rem 1.5rem;
+  background: #fff7d6;
+  border: 4px dashed var(--warm);
+  border-radius: 16px;
+  color: var(--ink);
+  max-width: 100%;
+  word-break: keep-all;
+}
+.word-label {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+
+/* -------- Big numeral display -------- */
+.big-numeral {
+  font-size: clamp(3rem, 10vw, 6rem);
+  font-weight: 900;
+  color: var(--warm);
+  text-shadow: 4px 4px 0 var(--ink);
+  padding: 0 1rem;
+  line-height: 1;
+}
+
+/* -------- Answer area -------- */
+.answer-area {
+  width: min(720px, 92vw);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+/* Building-styled answer button */
+.choice-btn {
+  position: relative;
+  flex: 1 1 130px;
+  max-width: 200px;
+  min-height: 110px;
+  border: 4px solid var(--ink);
+  border-radius: 12px 12px 4px 4px;
+  background: var(--b4);
+  color: #fff;
+  font-family: inherit;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.15;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  padding: 1.6rem 0.5rem 1.2rem;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.28);
+}
+.choice-btn:not(:disabled):hover  { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+.choice-btn:not(:disabled):active { transform: translate(2px, 2px);   box-shadow: 2px 2px 0 var(--ink); }
+.choice-btn:focus-visible { outline: 4px solid var(--sun); outline-offset: 2px; }
+.choice-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.choice-btn::before { /* rooftop antenna */
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 12px;
+  background: var(--ink);
+  border-radius: 4px 4px 0 0;
+}
+.choice-btn::after { /* building windows row */
+  content: "";
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  height: 14px;
+  background: radial-gradient(circle, var(--sun) 40%, transparent 41%) 0 0/16px 14px;
+  opacity: 0.55;
+}
+.choice-btn.color-1 { background: var(--b1); }
+.choice-btn.color-2 { background: var(--b3); }
+.choice-btn.color-3 { background: var(--b4); }
+.choice-btn.color-4 { background: var(--b5); }
+.choice-btn.color-5 { background: var(--b6); }
+
+.choice-btn.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; }
+.choice-btn.wrong-flash   { animation: wrongShake 0.5s ease;   background: var(--bad)  !important; }
+@keyframes correctPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+@keyframes wrongShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+/* Block-style choice button (variant for "numeral → choose blocks") */
+.choice-blocks {
+  min-height: 140px;
+  background: #fff !important;
+  color: var(--ink);
+  padding: 10px 6px;
+}
+.choice-blocks::after { display: none; }
+.choice-blocks .blocks { padding: 0; gap: 4px; }
+.choice-blocks .tens-rod  { height: 60px; width: 10px; }
+.choice-blocks .ones-cube { width: 10px;  height: 10px; }
+.choice-blocks .ones-group { gap: 2px; max-width: 50px; }
+
+/* -------- On-screen numpad (for "type-it" question type) -------- */
+.numpad-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.typed-display {
+  font-size: 3rem;
+  font-weight: 900;
+  min-height: 60px;
+  min-width: 140px;
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border: 4px dashed var(--ink);
+  border-radius: 12px;
+  background: #fff;
+  margin: 0.25rem 0;
+  letter-spacing: 0.1em;
+  color: var(--warm);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+.typed-display.empty { color: #ccc; }
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  width: min(280px, 90vw);
+}
+.numpad button {
+  font-family: inherit;
+  font-size: 1.6rem;
+  font-weight: 900;
+  padding: 0.7rem;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.numpad button:not(:disabled):active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.numpad button:disabled { opacity: 0.6; cursor: not-allowed; }
+.numpad button.action { background: var(--b6); color: #fff; }
+.numpad button.submit { background: var(--good); color: #fff; }
+.numpad button:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+/* -------- Feedback line -------- */
+.feedback {
+  min-height: 40px;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  font-weight: 800;
+  padding: 0.4rem 1rem;
+  text-align: center;
+}
+.feedback.good { color: var(--good); animation: bounceIn 0.5s ease; }
+.feedback.bad  { color: var(--bad);  animation: bounceIn 0.5s ease; }
+@keyframes bounceIn {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* -------- Reward modal -------- */
+.reward-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(31,29,44,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+.reward-modal[hidden] { display: none; }
+.reward-card {
+  background: #fff;
+  border: 5px solid var(--ink);
+  border-radius: 24px;
+  padding: 1.5rem 2rem;
+  box-shadow: 10px 10px 0 var(--ink);
+  text-align: center;
+  max-width: 500px;
+  width: 92vw;
+  animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+  z-index: 2;
+}
+@keyframes popIn {
+  0%   { transform: scale(0) rotate(-15deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.reward-card h2 {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  margin-bottom: 1rem;
+  color: var(--warm);
+  text-shadow: 3px 3px 0 var(--ink);
+}
+.reward-image-wrap {
+  width: 220px;
+  height: 140px;
+  margin: 0 auto 1rem;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5e9c5, #e8c873);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.reward-image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.reward-image-wrap .fallback {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--ink);
+  padding: 0.5rem;
+  text-align: center;
+  line-height: 1.3;
+}
+.reward-msg {
+  font-size: 1.05rem;
+  margin-bottom: 1.25rem;
+  color: var(--ink-soft);
+}
+.play-again {
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 900;
+  padding: 0.8rem 2rem;
+  background: var(--good);
+  color: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: pointer;
+}
+.play-again:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.play-again:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+
+/* Confetti */
+.confetti-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  top: -20px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.9; }
+}
+
+/* -------- Responsive tweaks -------- */
+@media (max-width: 500px) {
+  header { padding: 0.5rem 0.75rem; gap: 0.5rem; }
+  .title { font-size: 1.1rem; }
+  main { padding-bottom: 100px; gap: 0.75rem; }
+  .choice-btn { min-height: 90px; flex: 1 1 100px; padding: 1.3rem 0.4rem 1rem; }
+  .sun { width: 60px; height: 60px; top: 70px; }
+  .skyline { height: 130px; bottom: 80px; }
+  .tens-rod { height: 80px; }
+  .lang-toggle { font-size: 0.75rem; padding: 0.25rem 0.6rem; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ Decorative city background ============ -->
+  <div class="city-bg" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="skyline">
+      <div class="b"></div><div class="b"></div><div class="b"></div>
+      <div class="b"></div><div class="b"></div><div class="b"></div>
+      <div class="b"></div><div class="b"></div><div class="b"></div>
+      <div class="b"></div>
+    </div>
+  </div>
+
+  <!-- ============ Header & progress bar ============ -->
+  <header>
+    <div class="title" id="titleEl">🏙️ Sayı Şehri</div>
+    <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
+    <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" id="progressBar">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0 / 10</div>
+    </div>
+  </header>
+
+  <!-- ============ Main game area ============ -->
+  <main>
+    <section class="question-area" aria-live="polite">
+      <div class="instruction" id="instruction"></div>
+      <div class="question-display" id="questionDisplay"></div>
+    </section>
+    <section class="answer-area" id="answerArea" aria-label="Answer choices"></section>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+  </main>
+
+  <!-- ============ Road with cars ============ -->
+  <div class="road" aria-hidden="true">
+    <div class="car car-1">🚗</div>
+    <div class="car car-2">🚙</div>
+    <div class="car car-3">🚕</div>
+  </div>
+
+  <!-- ============ Reward modal ============ -->
+  <div class="reward-modal" id="rewardModal" hidden role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <div class="reward-card">
+      <h2 id="rewardTitle">🎉 Kazandın! 🎉</h2>
+      <div class="reward-image-wrap" id="rewardImageWrap"></div>
+      <p class="reward-msg" id="rewardMsg">Aferin, matematik yıldızı!</p>
+      <button class="play-again" id="playAgainBtn" type="button">Tekrar Oyna</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================================
+   NUMBER CITY — game logic
+   ========================================================================= */
+(() => {
+  'use strict';
+
+  /* ---------- Config ---------- */
+  const TARGET_PROGRESS = 10;
+  const INCREMENT_RIGHT = 1;
+  const DECREMENT_WRONG = 0;   // no backward progress — Grade 2 accessibility
+  const FEEDBACK_DELAY  = 1100;
+
+  /* ---------- i18n ---------- */
+  const STRINGS = {
+    en: {
+      title:           '🏙️ Number City',
+      blocksToNumeral: 'What number is this?',
+      numeralToBlocks: 'Which picture shows this number?',
+      wordToNumeral:   'Pick the matching number',
+      numeralToWord:   'Pick the matching word',
+      typeFromBlocks:  'Count the blocks and type the number',
+      readThisWord:    'Read this word:',
+      praises:         ['⭐ Great job!', '🎉 Awesome!', '✨ You got it!', '👏 Nice work!', '🚀 Math star!', '💪 Keep going!', '🌟 Brilliant!'],
+      wrongMsg:        (ans) => `🙂 The answer was ${ans}. Try the next one!`,
+      rewardTitle:     '🎉 You Won! 🎉',
+      rewardMsg:       'Great job, math star!',
+      playAgain:       'Play Again',
+      rewardMissing:   '(reward image missing)',
+      ariaAnswer:      (v) => `Answer: ${v}`,
+      ariaPicture:     (v) => `Picture for number ${v}`,
+      ariaTyped:       'Your typed answer',
+      ariaDelete:      'Delete last digit',
+      ariaSubmit:      'Submit answer',
+      ariaDigit:       (k) => `Digit ${k}`,
+      progressLabel:   'Progress',
+      langToggle:      'TR',
+    },
+    tr: {
+      title:           '🏙️ Sayı Şehri',
+      blocksToNumeral: 'Bu kaç?',
+      numeralToBlocks: 'Hangi resim bu sayıyı gösteriyor?',
+      wordToNumeral:   'Eşleşen sayıyı seç',
+      numeralToWord:   'Eşleşen kelimeyi seç',
+      typeFromBlocks:  'Blokları say ve sayıyı yaz',
+      readThisWord:    'Bu kelimeyi oku:',
+      praises:         ['⭐ Harika!', '🎉 Süper!', '✨ Doğru!', '👏 Aferin!', '🚀 Matematik yıldızı!', '💪 Devam et!', '🌟 Muhteşem!'],
+      wrongMsg:        (ans) => `🙂 Cevap ${ans} idi. Bir sonrakini dene!`,
+      rewardTitle:     '🎉 Kazandın! 🎉',
+      rewardMsg:       'Aferin, matematik yıldızı!',
+      playAgain:       'Tekrar Oyna',
+      rewardMissing:   '(ödül resmi eksik)',
+      ariaAnswer:      (v) => `Cevap: ${v}`,
+      ariaPicture:     (v) => `${v} sayısının resmi`,
+      ariaTyped:       'Yazdığın cevap',
+      ariaDelete:      'Son rakamı sil',
+      ariaSubmit:      'Cevabı gönder',
+      ariaDigit:       (k) => `Rakam ${k}`,
+      progressLabel:   'İlerleme',
+      langToggle:      'EN',
+    },
+  };
+
+  /* ---------- Language state ---------- */
+  let lang = localStorage.getItem('nc_lang') || 'tr';
+
+  const S = (key, ...args) => {
+    const val = STRINGS[lang][key];
+    return typeof val === 'function' ? val(...args) : val;
+  };
+
+  function setLang(newLang) {
+    lang = newLang;
+    localStorage.setItem('nc_lang', lang);
+    document.documentElement.lang = lang;
+    applyStaticStrings();
+    // Re-render current question in the new language
+    if (state.current) renderQuestion(state.current);
+  }
+
+  function applyStaticStrings() {
+    $titleEl.textContent       = S('title');
+    $rewardTitleEl.textContent = S('rewardTitle');
+    $rewardMsgEl.textContent   = S('rewardMsg');
+    $playAgainBtn.textContent  = S('playAgain');
+    $langToggleBtn.textContent = S('langToggle');
+    $progressBar.setAttribute('aria-label', S('progressLabel'));
+    document.title = S('title').replace(/^🏙️\s*/, '') + ' — Grade 2 Math';
+  }
+
+  /* ---------- Rewards (5tl.jpg filename corrected) ---------- */
+  const REWARDS = [
+    { src: '../images/1tl.jpg',  weight: 10, label: '1 TL'  },
+    { src: '../images/5tl.jpg',  weight: 50, label: '5 TL'  },
+    { src: '../images/10tl.jpg', weight: 20, label: '10 TL' },
+    { src: '../images/20tl.jpg', weight: 20, label: '20 TL' },
+  ];
+
+  /* ---------- Turkish number words (0–100) ---------- */
+  const ONES_WORDS = ['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
+  const TENS_WORDS = ['','on','yirmi','otuz','kırk','elli','altmış','yetmiş','seksen','doksan'];
+  function turkishWord(n) {
+    if (n === 0)   return 'sıfır';
+    if (n === 100) return 'yüz';
+    const t = Math.floor(n / 10);
+    const o = n % 10;
+    if (t === 0) return ONES_WORDS[o];
+    if (o === 0) return TENS_WORDS[t];
+    return TENS_WORDS[t] + ' ' + ONES_WORDS[o];
+  }
+
+  /* ---------- Small helpers ---------- */
+  const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Distractors: prefer ±1–10 (pedagogically tight) then same-tens/same-ones
+  function makeDistractors(answer, count = 2) {
+    const used = new Set([answer]);
+    const out  = [];
+    let safety = 0;
+    while (out.length < count && safety++ < 80) {
+      let d;
+      const strategy = rand(1, 4);
+      if (strategy === 1) {
+        // Nearby ±1..10 — hardest distractor for Grade 2
+        d = answer + (Math.random() < 0.5 ? rand(1, 10) : -rand(1, 10));
+      } else if (strategy === 2) {
+        // Same ones digit, different tens — fixed: rand(0,9) not rand(0,10)
+        d = rand(0, 9) * 10 + (answer % 10);
+      } else if (strategy === 3) {
+        // Same tens digit, different ones
+        d = Math.floor(answer / 10) * 10 + rand(0, 9);
+      } else {
+        // Swap tens and ones digits
+        d = (answer % 10) * 10 + Math.floor(answer / 10);
+      }
+      if (d < 0 || d > 100 || used.has(d)) continue;
+      used.add(d);
+      out.push(d);
+    }
+    while (out.length < count) {
+      const d = rand(0, 100);
+      if (!used.has(d)) { used.add(d); out.push(d); }
+    }
+    return out;
+  }
+
+  // Base-10 block HTML for n in 0..100
+  function renderBlocks(n) {
+    if (n === 0) return '<div class="zero-marker">0</div>';
+    const tens = Math.floor(n / 10);
+    const ones = n % 10;
+    let html = '<div class="blocks">';
+    for (let i = 0; i < tens; i++) {
+      html += '<div class="tens-rod">' +
+              '<span></span><span></span><span></span><span></span><span></span>' +
+              '<span></span><span></span><span></span><span></span><span></span>' +
+              '</div>';
+    }
+    if (ones > 0) {
+      html += '<div class="ones-group">';
+      for (let i = 0; i < ones; i++) html += '<div class="ones-cube"></div>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  /* ---------- Question generators ---------- */
+
+  function genBlocksToNumeral() {
+    const answer = rand(0, 100);
+    const choices = shuffle([answer, ...makeDistractors(answer, 2)]);
+    return {
+      instructionKey: 'blocksToNumeral',
+      displayHtml: renderBlocks(answer),
+      choices, answer, mode: 'multiple-choice', type: 'numeric',
+    };
+  }
+
+  function genNumeralToBlocks() {
+    const answer = rand(1, 100);
+    const choices = shuffle([answer, ...makeDistractors(answer, 2)]);
+    return {
+      instructionKey: 'numeralToBlocks',
+      displayHtml: '<div class="big-numeral">' + answer + '</div>',
+      choices, answer, mode: 'multiple-choice', type: 'blocks',
+    };
+  }
+
+  function genWordToNumeral() {
+    const answer = rand(0, 100);
+    const choices = shuffle([answer, ...makeDistractors(answer, 2)]);
+    return {
+      instructionKey: 'wordToNumeral',
+      wordCardAnswer: answer,  // stored so renderQuestion can rebuild label in current lang
+      displayHtml: null,       // rebuilt at render time
+      choices, answer, mode: 'multiple-choice', type: 'numeric',
+    };
+  }
+
+  function genNumeralToWord() {
+    const answer = rand(0, 100);
+    const choices = shuffle([answer, ...makeDistractors(answer, 2)]);
+    return {
+      instructionKey: 'numeralToWord',
+      displayHtml: '<div class="big-numeral">' + answer + '</div>',
+      choices, answer, mode: 'multiple-choice', type: 'word',
+    };
+  }
+
+  // Skip 0: "count the blocks" with no blocks is confusing
+  function genTypeFromBlocks() {
+    const answer = rand(1, 100);
+    return {
+      instructionKey: 'typeFromBlocks',
+      displayHtml: renderBlocks(answer),
+      answer, mode: 'numpad',
+    };
+  }
+
+  const GENERATORS = [
+    { fn: genBlocksToNumeral, weight: 28 },
+    { fn: genNumeralToBlocks, weight: 20 },
+    { fn: genWordToNumeral,   weight: 24 },
+    { fn: genNumeralToWord,   weight: 16 },
+    { fn: genTypeFromBlocks,  weight: 12 },
+  ];
+
+  function pickGenerator() {
+    const total = GENERATORS.reduce((s, g) => s + g.weight, 0);
+    let r = Math.random() * total;
+    for (const g of GENERATORS) { r -= g.weight; if (r <= 0) return g.fn; }
+    return GENERATORS[0].fn;
+  }
+
+  /* ---------- Game state ---------- */
+  const state = {
+    progress: 0,
+    current: null,
+    typedAnswer: '',
+    locked: false,
+  };
+
+  /* ---------- DOM refs ---------- */
+  const $titleEl         = document.getElementById('titleEl');
+  const $instruction     = document.getElementById('instruction');
+  const $questionDisplay = document.getElementById('questionDisplay');
+  const $answerArea      = document.getElementById('answerArea');
+  const $feedback        = document.getElementById('feedback');
+  const $progressFill    = document.getElementById('progressFill');
+  const $progressText    = document.getElementById('progressText');
+  const $progressBar     = document.getElementById('progressBar');
+  const $rewardModal     = document.getElementById('rewardModal');
+  const $rewardImageWrap = document.getElementById('rewardImageWrap');
+  const $rewardTitleEl   = document.getElementById('rewardTitle');
+  const $rewardMsgEl     = document.getElementById('rewardMsg');
+  const $confettiLayer   = document.getElementById('confettiLayer');
+  const $playAgainBtn    = document.getElementById('playAgainBtn');
+  const $langToggleBtn   = document.getElementById('langToggleBtn');
+
+  /* ---------- Progress bar ---------- */
+  function updateProgress() {
+    const pct = (state.progress / TARGET_PROGRESS) * 100;
+    $progressFill.style.width = pct + '%';
+    $progressText.textContent = state.progress + ' / ' + TARGET_PROGRESS;
+    $progressBar.setAttribute('aria-valuenow', String(state.progress));
+  }
+
+  /* ---------- Render a question ---------- */
+  function renderQuestion(q) {
+    $instruction.textContent = S(q.instructionKey);
+
+    // Word-card questions rebuild their HTML on every render so the label
+    // ("Read this word:" / "Bu kelimeyi oku:") always uses the active language.
+    if (q.wordCardAnswer !== undefined) {
+      q.displayHtml =
+        '<div class="word-card">' +
+          '<span class="word-label">' + S('readThisWord') + '</span>' +
+          turkishWord(q.wordCardAnswer) +
+        '</div>';
+    }
+
+    $questionDisplay.innerHTML = q.displayHtml;
+    $feedback.textContent = '';
+    $feedback.className = 'feedback';
+    $answerArea.innerHTML = '';
+
+    if (q.mode === 'multiple-choice') {
+      q.choices.forEach((choice, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn color-' + ((idx % 5) + 1);
+        btn.type = 'button';
+        btn.dataset.value = String(choice);
+
+        if (q.type === 'numeric') {
+          btn.textContent = String(choice);
+          btn.setAttribute('aria-label', S('ariaAnswer', choice));
+        } else if (q.type === 'word') {
+          btn.textContent = turkishWord(choice);
+          btn.style.fontSize = 'clamp(0.95rem, 2.4vw, 1.4rem)';
+          btn.setAttribute('aria-label', S('ariaAnswer', turkishWord(choice)));
+        } else if (q.type === 'blocks') {
+          btn.classList.add('choice-blocks');
+          btn.innerHTML = renderBlocks(choice);
+          btn.setAttribute('aria-label', S('ariaPicture', choice));
+        }
+        btn.addEventListener('click', () => onChoiceClicked(btn, choice));
+        $answerArea.appendChild(btn);
+      });
+    } else if (q.mode === 'numpad') {
+      state.typedAnswer = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'numpad-wrap';
+
+      const display = document.createElement('div');
+      display.className = 'typed-display empty';
+      display.id = 'typedDisplay';
+      display.textContent = '?';
+      display.setAttribute('aria-label', S('ariaTyped'));
+      wrap.appendChild(display);
+
+      const pad = document.createElement('div');
+      pad.className = 'numpad';
+      ['1','2','3','4','5','6','7','8','9','⌫','0','✓'].forEach(k => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = k;
+        if (k === '⌫')      { b.className = 'action'; b.setAttribute('aria-label', S('ariaDelete')); }
+        else if (k === '✓') { b.className = 'submit'; b.setAttribute('aria-label', S('ariaSubmit')); }
+        else                  b.setAttribute('aria-label', S('ariaDigit', k));
+        b.addEventListener('click', () => onNumpadKey(k));
+        pad.appendChild(b);
+      });
+      wrap.appendChild(pad);
+      $answerArea.appendChild(wrap);
+    }
+  }
+
+  function updateTypedDisplay() {
+    const $td = document.getElementById('typedDisplay');
+    if (!$td) return;
+    if (state.typedAnswer === '') {
+      $td.textContent = '?';
+      $td.classList.add('empty');
+    } else {
+      $td.textContent = state.typedAnswer;
+      $td.classList.remove('empty');
+    }
+  }
+
+  /* ---------- Lock / unlock interactive elements ---------- */
+  function setInteractionsDisabled(disabled) {
+    $answerArea.querySelectorAll('button').forEach(b => { b.disabled = disabled; });
+  }
+
+  /* ---------- Input handlers ---------- */
+  function onNumpadKey(k) {
+    if (state.locked) return;
+    if (k === '⌫') {
+      state.typedAnswer = state.typedAnswer.slice(0, -1);
+    } else if (k === '✓') {
+      if (state.typedAnswer === '') return;
+      submitAnswer(parseInt(state.typedAnswer, 10));
+      return;
+    } else {
+      if (state.typedAnswer.length >= 3) return;
+      const next = state.typedAnswer + k;
+      const num  = parseInt(next, 10);
+      if (num > 100) return;
+      // Normalise leading zero ("07" → "7")
+      state.typedAnswer = String(num);
+    }
+    updateTypedDisplay();
+  }
+
+  function onChoiceClicked(btn, value) {
+    if (state.locked) return;
+    submitAnswer(value, btn);
+  }
+
+  /* ---------- Answer submission ---------- */
+  function submitAnswer(value, btn) {
+    state.locked = true;
+    setInteractionsDisabled(true);
+    const correct = value === state.current.answer;
+
+    if (correct) {
+      state.progress = Math.min(TARGET_PROGRESS, state.progress + INCREMENT_RIGHT);
+      $feedback.textContent = pick(S('praises'));
+      $feedback.className = 'feedback good';
+      if (btn) btn.classList.add('correct-flash');
+    } else {
+      state.progress = Math.max(0, state.progress - DECREMENT_WRONG);
+      $feedback.textContent = S('wrongMsg', state.current.answer);
+      $feedback.className = 'feedback bad';
+      if (btn) btn.classList.add('wrong-flash');
+      if (state.current.mode === 'multiple-choice') {
+        document.querySelectorAll('.choice-btn').forEach(b => {
+          if (parseInt(b.dataset.value, 10) === state.current.answer) {
+            b.classList.add('correct-flash');
+          }
+        });
+      }
+    }
+    updateProgress();
+
+    if (state.progress >= TARGET_PROGRESS) {
+      setTimeout(showReward, 900);
+    } else {
+      setTimeout(nextQuestion, FEEDBACK_DELAY + (correct ? 0 : 700));
+    }
+  }
+
+  /* ---------- Main loop ---------- */
+  function nextQuestion() {
+    state.locked = false;
+    state.typedAnswer = '';
+    const q = pickGenerator()();
+    state.current = q;
+    renderQuestion(q);
+  }
+
+  /* ---------- Reward ---------- */
+  function chooseReward() {
+    const total = REWARDS.reduce((s, r) => s + r.weight, 0);
+    let r = Math.random() * total;
+    for (const reward of REWARDS) { r -= reward.weight; if (r <= 0) return reward; }
+    return REWARDS[0];
+  }
+
+  function showReward() {
+    const reward = chooseReward();
+    $rewardImageWrap.innerHTML = '';
+
+    /* Preload — only attach the <img> to the DOM if it actually loaded,
+       so a missing reward image shows the emoji fallback alone (no
+       broken-image glyph). */
+    const img = new Image();
+    img.alt = reward.label;
+    img.onload = () => {
+      $rewardImageWrap.innerHTML = '';
+      $rewardImageWrap.appendChild(img);
+    };
+    img.onerror = () => {
+      $rewardImageWrap.innerHTML =
+        '<div class="fallback">🪙<br>' + reward.label +
+        '<br><span style="font-size:0.7rem;opacity:0.7;">' + S('rewardMissing') + '</span></div>';
+    };
+    img.src = reward.src;
+
+    spawnConfetti();
+    $rewardModal.hidden = false;
+    $playAgainBtn.focus();
+    trapFocus($rewardModal);
+  }
+
+  /* ---------- Focus trap for reward modal ---------- */
+  function trapFocus(modal) {
+    const focusable = Array.from(
+      modal.querySelectorAll('button, [tabindex]:not([tabindex="-1"])')
+    );
+    if (!focusable.length) return;
+    modal._trapHandler = (e) => {
+      if (e.key !== 'Tab') return;
+      const first = focusable[0];
+      const last  = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
+      }
+    };
+    modal.addEventListener('keydown', modal._trapHandler);
+  }
+
+  function releaseFocus(modal) {
+    if (modal._trapHandler) {
+      modal.removeEventListener('keydown', modal._trapHandler);
+      modal._trapHandler = null;
+    }
+  }
+
+  function spawnConfetti() {
+    $confettiLayer.innerHTML = '';
+    const colors = ['#ff5252','#ffca28','#66bb6a','#42a5f5','#ab47bc','#ff9800'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti-piece';
+      c.style.left = Math.random() * 100 + '%';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (2 + Math.random() * 2) + 's';
+      c.style.animationDelay    = (Math.random() * 0.6) + 's';
+      c.style.transform         = 'rotate(' + (Math.random() * 360) + 'deg)';
+      $confettiLayer.appendChild(c);
+    }
+  }
+
+  /* ---------- Restart ---------- */
+  function resetGame() {
+    releaseFocus($rewardModal);
+    state.progress = 0;
+    state.locked = false;
+    state.typedAnswer = '';
+    updateProgress();
+    $rewardModal.hidden = true;
+    $confettiLayer.innerHTML = '';
+    nextQuestion();
+  }
+
+  /* ---------- Keyboard ---------- */
+  document.addEventListener('keydown', (e) => {
+    // Escape closes reward modal
+    if (e.key === 'Escape' && !$rewardModal.hidden) { resetGame(); return; }
+
+    if (state.locked || !state.current) return;
+
+    if (state.current.mode === 'numpad') {
+      if (/^[0-9]$/.test(e.key))     onNumpadKey(e.key);
+      else if (e.key === 'Backspace') onNumpadKey('⌫');
+      else if (e.key === 'Enter')     onNumpadKey('✓');
+    } else if (state.current.mode === 'multiple-choice') {
+      // A/B/C shortcuts — avoids conflict when choices are numerals
+      const idx = { a: 0, b: 1, c: 2 }[e.key.toLowerCase()];
+      if (idx !== undefined) {
+        const btns = $answerArea.querySelectorAll('.choice-btn');
+        if (btns[idx] && !btns[idx].disabled) btns[idx].click();
+      }
+    }
+  });
+
+  /* ---------- Init ---------- */
+  $playAgainBtn.addEventListener('click', resetGame);
+  $langToggleBtn.addEventListener('click', () => setLang(lang === 'en' ? 'tr' : 'en'));
+
+  document.documentElement.lang = lang;
+  applyStaticStrings();
+  updateProgress();
+  nextQuestion();
+
+})();
+</script>
+</body>
+</html>

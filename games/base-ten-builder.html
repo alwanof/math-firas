@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>Onluk İnşaatçı — Grade 2 Math Game</title>
+<style>
+/* =========================================================================
+   BASE-TEN BUILDER / ONLUK İNŞAATÇI — Grade 2 Math Game
+   Target concept: tens and ones place value (Turkish curriculum MAT.2.1.2)
+   Single-file, no external libraries.
+   ========================================================================= */
+
+/* -------- Design tokens (matching spec exactly) -------- */
+:root {
+  --sky-top:    #ffd9a8;
+  --sky-mid:    #ffb88c;
+  --sky-bottom: #87ceeb;
+  --sun:        #ffd23f;
+  --cloud:      #ffffff;
+  --road:       #3a3a4d;
+  --road-line:  #fff5b1;
+  --ink:        #1f1d2c;
+  --ink-soft:   #4a4760;
+  --good:       #4caf50;
+  --bad:        #ef4f4f;
+  --warm:       #ff7a59;
+  --tens-block: #ff7a59;
+  --tens-edge:  #b8401e;
+  --tens-zone:  #fff1ea;
+  --tens-zone-edge: #ff7a59;
+  --ones-block: #3f86ff;
+  --ones-edge:  #1b4dad;
+  --ones-zone:  #e7f0ff;
+  --ones-zone-edge: #3f86ff;
+  --b1: #ff5252;
+  --b2: #ffca28;
+  --b3: #66bb6a;
+  --b4: #42a5f5;
+  --b5: #ab47bc;
+  --b6: #ff9800;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: "Comic Sans MS","Chalkboard SE","Comic Neue","Trebuchet MS",system-ui,sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 35%, var(--sky-bottom) 100%);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------- Header & progress bar -------- */
+header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255,255,255,0.85);
+  border-bottom: 4px solid var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.title {
+  font-size: clamp(1.1rem, 3.2vw, 1.9rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-shadow: 2px 2px 0 var(--sun);
+  white-space: nowrap;
+}
+
+/* -------- Language toggle -------- */
+.lang-toggle {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 0.3rem 0.8rem;
+  background: var(--ink);
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.lang-toggle:hover { background: var(--ink-soft); }
+.lang-toggle:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+.lang-toggle:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+/* -------- Level chip -------- */
+.level-chip {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.25rem 0.6rem;
+  background: var(--sun);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 2px 2px 0 var(--ink);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  text-transform: uppercase;
+  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), background 0.25s;
+}
+.level-chip.bump { animation: levelBump 0.6s cubic-bezier(.34,1.56,.64,1); }
+@keyframes levelBump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35) rotate(-6deg); background: var(--good); color: #fff; }
+  100% { transform: scale(1); }
+}
+#levelValue {
+  font-size: 1rem;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 50%;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
+  max-width: 360px;
+}
+.progress-track {
+  flex: 1;
+  height: 22px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff5252 0%, #ffca28 50%, #66bb6a 100%);
+  transition: width 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+.progress-text {
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* -------- Decorative ambient background -------- */
+.ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.sun {
+  position: absolute;
+  top: 70px;
+  right: 8%;
+  width: 80px;
+  height: 80px;
+  background: var(--sun);
+  border-radius: 50%;
+  box-shadow: 0 0 50px rgba(255,210,63,0.7), 4px 4px 0 var(--ink);
+  border: 4px solid var(--ink);
+}
+.cloud {
+  position: absolute;
+  background: var(--cloud);
+  border: 3px solid var(--ink);
+  border-radius: 50px;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.cloud::before, .cloud::after {
+  content: "";
+  position: absolute;
+  background: var(--cloud);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+}
+.cloud-1 { top: 80px;  left: 5%;   width: 90px; height: 28px; animation: drift 50s linear infinite; }
+.cloud-1::before { width: 40px; height: 40px; top: -22px; left: 14px; }
+.cloud-1::after  { width: 30px; height: 30px; top: -16px; left: 50px; }
+.cloud-2 { top: 150px; left: 35%;  width: 70px; height: 22px; animation: drift 65s linear infinite; animation-delay: -25s; }
+.cloud-2::before { width: 32px; height: 32px; top: -18px; left: 10px; }
+.cloud-2::after  { width: 24px; height: 24px; top: -12px; left: 36px; }
+.cloud-3 { top: 110px; right: 25%; width: 80px; height: 26px; animation: drift 55s linear infinite; animation-delay: -15s; }
+.cloud-3::before { width: 36px; height: 36px; top: -20px; left: 12px; }
+.cloud-3::after  { width: 26px; height: 26px; top: -14px; left: 42px; }
+@keyframes drift {
+  0%   { transform: translateX(-200px); }
+  100% { transform: translateX(calc(100vw + 200px)); }
+}
+
+/* Construction crane silhouette */
+.crane {
+  position: absolute;
+  bottom: 80px;
+  right: 6%;
+  width: 6px;
+  height: 200px;
+  background: var(--ink);
+  opacity: 0.3;
+}
+.crane::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: -120px;
+  width: 140px;
+  height: 6px;
+  background: var(--ink);
+}
+.crane::after {
+  content: "🪝";
+  position: absolute;
+  top: 14px;
+  left: -110px;
+  font-size: 1.4rem;
+  opacity: 0.8;
+  animation: swing 4s ease-in-out infinite;
+  transform-origin: top center;
+}
+@keyframes swing {
+  0%, 100% { transform: rotate(-8deg); }
+  50%      { transform: rotate(8deg); }
+}
+
+/* -------- Ground strip -------- */
+.ground {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 80px;
+  background: var(--road);
+  border-top: 4px solid var(--ink);
+  z-index: 1;
+  overflow: hidden;
+}
+.ground::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 6px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(
+    to right,
+    var(--road-line) 0 40px,
+    transparent 40px 80px
+  );
+  animation: roadlines 1.5s linear infinite;
+}
+@keyframes roadlines { to { background-position: -80px 0; } }
+
+/* -------- Main game area -------- */
+main {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 100px;
+  overflow-y: auto;
+}
+
+/* -------- Question prompt card -------- */
+.prompt-card {
+  background: rgba(255,255,255,0.97);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  width: min(720px, 94vw);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.prompt-text {
+  flex: 1;
+  min-width: 160px;
+  text-align: left;
+}
+.instruction {
+  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 0.15rem;
+}
+.target-number {
+  font-size: clamp(2.2rem, 7vw, 3.6rem);
+  font-weight: 900;
+  color: var(--warm);
+  text-shadow: 3px 3px 0 var(--ink);
+  line-height: 1;
+}
+.hint-btn {
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  padding: 0.5rem 1rem;
+  background: var(--sun);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 3px 3px 0 var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.hint-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+.hint-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.hint-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.hint-btn.active { background: var(--good); color: #fff; }
+
+/* -------- Workspace -------- */
+.workspace {
+  width: min(720px, 94vw);
+  background: rgba(255,255,255,0.95);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  padding: 0.75rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.zones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.zone {
+  position: relative;
+  border: 4px dashed var(--ink);
+  border-radius: 14px;
+  padding: 0.5rem;
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.zone.tens { background: var(--tens-zone); border-color: var(--tens-zone-edge); }
+.zone.ones { background: var(--ones-zone); border-color: var(--ones-zone-edge); }
+
+.zone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  flex-wrap: wrap;
+}
+.zone-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 900;
+  font-size: clamp(0.85rem, 2vw, 1.05rem);
+  padding: 0.2rem 0.55rem;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: #fff;
+}
+.zone.tens .zone-label { color: var(--tens-edge); }
+.zone.ones .zone-label { color: var(--ones-edge); }
+.zone-count {
+  font-weight: 900;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  padding: 0.05rem 0.55rem;
+  box-shadow: 2px 2px 0 var(--ink);
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Hint overlay */
+.zone-hint {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  padding: 0.2rem 0.4rem;
+  margin-bottom: 0.3rem;
+  background: rgba(255,255,255,0.7);
+  border: 2px dashed var(--ink-soft);
+  border-radius: 6px;
+  display: none;
+}
+.zone-hint.visible { display: block; }
+
+/* Block holder */
+.block-area {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 4px;
+  min-height: 110px;
+}
+
+/* Tens rod */
+.tens-rod {
+  display: grid;
+  grid-template-rows: repeat(10, 1fr);
+  width: 18px;
+  height: 100px;
+  background: var(--tens-block);
+  border: 2px solid var(--tens-edge);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: blockPop 0.35s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 2px 2px 0 var(--tens-edge);
+}
+.tens-rod > span { border-bottom: 1px solid var(--tens-edge); pointer-events: none; }
+.tens-rod > span:last-child { border-bottom: none; }
+.tens-rod:hover { transform: translateY(-3px); box-shadow: 2px 5px 0 var(--tens-edge); }
+.tens-rod.removing { animation: blockFly 0.3s ease-in forwards; }
+.tens-rod.regrouped {
+  animation: regroupArrive 0.6s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 0 0 20px var(--good), 2px 2px 0 var(--tens-edge);
+}
+
+/* Ones cube */
+.ones-cube {
+  width: 18px;
+  height: 18px;
+  background: var(--ones-block);
+  border: 2px solid var(--ones-edge);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  animation: blockPop 0.3s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 2px 2px 0 var(--ones-edge);
+}
+.ones-cube:hover { transform: translateY(-3px) scale(1.1); }
+.ones-cube.removing { animation: blockFly 0.3s ease-in forwards; }
+.ones-cube.regrouping {
+  animation: regroupCollect 0.55s ease-in forwards;
+  background: var(--good);
+  border-color: #2d7a31;
+}
+
+/* Locked (pre-filled, read-only) blocks — slightly dimmed, no hover */
+.tens-rod.locked, .ones-cube.locked {
+  cursor: default;
+  opacity: 0.85;
+  filter: saturate(0.85);
+}
+.tens-rod.locked:hover, .ones-cube.locked:hover {
+  transform: none;
+  box-shadow: 2px 2px 0 var(--tens-edge);
+}
+.ones-cube.locked:hover { box-shadow: 2px 2px 0 var(--ones-edge); }
+
+@keyframes blockPop {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes blockFly {
+  0%   { transform: scale(1) translateY(0); opacity: 1; }
+  100% { transform: scale(0.3) translateY(-30px); opacity: 0; }
+}
+@keyframes regroupCollect {
+  0%   { transform: scale(1) translateX(0); opacity: 1; }
+  50%  { transform: scale(1.3); }
+  100% { transform: scale(0.2) translateX(-150px) translateY(-20px); opacity: 0; }
+}
+@keyframes regroupArrive {
+  0%   { transform: scale(0) translateY(50px); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* Zone action buttons */
+.zone-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  padding-top: 0.3rem;
+}
+.zone-btn {
+  font-family: inherit;
+  font-size: clamp(0.9rem, 2.4vw, 1.15rem);
+  font-weight: 900;
+  padding: 0.5rem 0.7rem;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  background: #fff;
+  color: var(--ink);
+  flex: 1;
+  min-width: 60px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.zone-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+.zone-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.zone-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.zone-btn.add.tens-color { background: var(--tens-block); color: #fff; }
+.zone-btn.add.ones-color { background: var(--ones-block); color: #fff; }
+.zone-btn[disabled] { opacity: 0.4; cursor: not-allowed; box-shadow: 1px 1px 0 var(--ink); transform: none; }
+
+/* Live equation summary */
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: clamp(0.95rem, 2.4vw, 1.25rem);
+  font-weight: 800;
+  padding: 0.4rem;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.summary .tens-part { color: var(--tens-edge); }
+.summary .ones-part { color: var(--ones-edge); }
+.summary .total { color: var(--warm); font-size: 1.15em; text-shadow: 1.5px 1.5px 0 var(--ink); }
+.summary.match { animation: matchGlow 1s ease infinite; }
+@keyframes matchGlow {
+  0%, 100% { box-shadow: 2px 2px 0 var(--ink); }
+  50%      { box-shadow: 0 0 16px var(--good), 2px 2px 0 var(--ink); }
+}
+
+/* -------- Action row -------- */
+.action-row {
+  width: min(720px, 94vw);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.action-btn {
+  font-family: inherit;
+  font-weight: 900;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  padding: 0.65rem 1.25rem;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.action-btn.check { background: var(--good); color: #fff; flex: 2; min-width: 120px; }
+.action-btn.clear { background: #fff; color: var(--ink); flex: 1; min-width: 100px; }
+.action-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.action-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.action-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.action-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* Multiple-choice buttons */
+.mc-row {
+  width: min(720px, 94vw);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.mc-btn {
+  flex: 1 1 100px;
+  max-width: 180px;
+  min-height: 80px;
+  font-family: inherit;
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  font-weight: 900;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--ink);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.25);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.mc-btn:nth-child(1) { background: #ff5252; color: #fff; }
+.mc-btn:nth-child(2) { background: #66bb6a; color: #fff; }
+.mc-btn:nth-child(3) { background: #42a5f5; color: #fff; }
+.mc-btn:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--ink); }
+.mc-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.mc-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.mc-btn.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; }
+.mc-btn.wrong-flash   { animation: wrongShake 0.5s ease;   background: var(--bad)  !important; }
+@keyframes correctPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+@keyframes wrongShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+/* -------- Feedback -------- */
+.feedback {
+  min-height: 36px;
+  font-size: clamp(1rem, 2.4vw, 1.25rem);
+  font-weight: 800;
+  text-align: center;
+  padding: 0.3rem 1rem;
+}
+.feedback.good { color: var(--good); animation: bounceIn 0.5s ease; }
+.feedback.bad  { color: var(--bad);  animation: bounceIn 0.5s ease; }
+.feedback.info { color: var(--ink-soft); }
+@keyframes bounceIn {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* Regrouping toast */
+.regroup-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: var(--good);
+  color: #fff;
+  font-weight: 900;
+  font-size: 1rem;
+  padding: 0.6rem 1.2rem;
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink);
+  z-index: 50;
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(.34,1.56,.64,1), opacity 0.3s ease;
+  pointer-events: none;
+  text-align: center;
+  max-width: 90vw;
+}
+.regroup-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* -------- Reward modal -------- */
+.reward-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(31,29,44,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+.reward-modal[hidden] { display: none; }
+.reward-card {
+  background: #fff;
+  border: 5px solid var(--ink);
+  border-radius: 24px;
+  padding: 1.5rem 2rem;
+  box-shadow: 10px 10px 0 var(--ink);
+  text-align: center;
+  max-width: 500px;
+  width: 92vw;
+  animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+  z-index: 2;
+}
+@keyframes popIn {
+  0%   { transform: scale(0) rotate(-15deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.reward-card h2 {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  margin-bottom: 1rem;
+  color: var(--warm);
+  text-shadow: 3px 3px 0 var(--ink);
+}
+.reward-image-wrap {
+  width: 220px;
+  height: 140px;
+  margin: 0 auto 1rem;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5e9c5, #e8c873);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.reward-image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.reward-image-wrap .fallback {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--ink);
+  padding: 0.5rem;
+  text-align: center;
+  line-height: 1.3;
+}
+.reward-msg {
+  font-size: 1.05rem;
+  margin-bottom: 1.25rem;
+  color: var(--ink-soft);
+}
+.play-again {
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 900;
+  padding: 0.8rem 2rem;
+  background: var(--good);
+  color: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: pointer;
+}
+.play-again:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.play-again:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.play-again:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+
+.confetti-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  top: -20px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.9; }
+}
+
+/* -------- Mobile tweaks -------- */
+@media (max-width: 520px) {
+  header { padding: 0.5rem 0.75rem; }
+  main { padding: 0.5rem 0.5rem 90px; gap: 0.4rem; }
+  .zones { grid-template-columns: 1fr; }
+  .zone { min-height: 140px; }
+  .tens-rod  { height: 80px; width: 16px; }
+  .ones-cube { width: 16px; height: 16px; }
+  .sun { width: 60px; height: 60px; top: 60px; }
+  .crane { display: none; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ Decorative ambient background ============ -->
+  <div class="ambient" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="crane"></div>
+  </div>
+  <div class="ground" aria-hidden="true"></div>
+
+  <!-- ============ Header & progress bar ============ -->
+  <header>
+    <div class="title" id="titleEl">🏗️ Onluk İnşaatçı</div>
+    <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" id="progressBar" aria-label="Progress">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0 / 10</div>
+    </div>
+    <div class="level-chip" id="levelChip" aria-live="polite">
+      <span id="levelLabel">Seviye</span> <span id="levelValue">1</span>
+    </div>
+    <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
+  </header>
+
+  <!-- ============ Main game ============ -->
+  <main>
+
+    <!-- Prompt card -->
+    <section class="prompt-card">
+      <div class="prompt-text">
+        <div class="instruction" id="instructionEl">Bu sayıyı oluştur!</div>
+        <div class="target-number" id="targetNumberEl">42</div>
+      </div>
+      <button class="hint-btn" id="hintBtn" type="button" aria-pressed="false">
+        💡 <span id="hintLabel">İpucu</span>
+      </button>
+    </section>
+
+    <!-- Workspace -->
+    <section class="workspace" id="workspace">
+      <div class="zones">
+
+        <!-- TENS zone -->
+        <div class="zone tens">
+          <div class="zone-header">
+            <span class="zone-label" id="tensLabel">🟧 ONLAR</span>
+            <span class="zone-count" id="tensCount" aria-label="Number of tens">0</span>
+          </div>
+          <div class="zone-hint" id="tensHint">
+            <strong>10</strong> bir onluk çubuktur — içinde 10 tane küp var.
+          </div>
+          <div class="block-area" id="tensArea" aria-label="Tens rods"></div>
+          <div class="zone-actions">
+            <button class="zone-btn add tens-color" id="addTens" type="button" aria-label="Add one ten">+10</button>
+            <button class="zone-btn" id="removeTens" type="button" aria-label="Remove one ten">−10</button>
+          </div>
+        </div>
+
+        <!-- ONES zone -->
+        <div class="zone ones">
+          <div class="zone-header">
+            <span class="zone-label" id="onesLabel">🟦 BİRLER</span>
+            <span class="zone-count" id="onesCount" aria-label="Number of ones">0</span>
+          </div>
+          <div class="zone-hint" id="onesHint">
+            <strong>1</strong> tane küçük küptür.
+          </div>
+          <div class="block-area" id="onesArea" aria-label="Ones cubes"></div>
+          <div class="zone-actions">
+            <button class="zone-btn add ones-color" id="addOnes" type="button" aria-label="Add one one">+1</button>
+            <button class="zone-btn" id="removeOnes" type="button" aria-label="Remove one one">−1</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Live equation: 4 tens + 2 ones = 42 -->
+      <div class="summary" id="summary" aria-live="polite">
+        <span><span class="tens-part" id="sumTens">0</span> <span id="sumTensWord">onluk</span></span>
+        <span>+</span>
+        <span><span class="ones-part" id="sumOnes">0</span> <span id="sumOnesWord">birlik</span></span>
+        <span>=</span>
+        <span class="total" id="sumTotal">0</span>
+      </div>
+    </section>
+
+    <!-- Action row (Build mode) -->
+    <div class="action-row" id="actionRow">
+      <button class="action-btn clear" id="clearBtn" type="button">🧹 Temizle</button>
+      <button class="action-btn check" id="checkBtn" type="button">✓ Kontrol Et</button>
+    </div>
+
+    <!-- Multiple-choice row (Identify + Place-value modes) -->
+    <div class="mc-row" id="mcRow" hidden></div>
+
+    <!-- Feedback -->
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+
+  </main>
+
+  <!-- Regrouping toast -->
+  <div class="regroup-toast" id="regroupToast" aria-live="polite">
+    🎉 10 birlik = 1 onluk! Bu bir gruplamadır!
+  </div>
+
+  <!-- ============ Reward modal ============ -->
+  <div class="reward-modal" id="rewardModal" hidden role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <div class="reward-card">
+      <h2 id="rewardTitle">🎉 Kazandın! 🎉</h2>
+      <div class="reward-image-wrap" id="rewardImageWrap"></div>
+      <p class="reward-msg" id="rewardMsg">Harika iş, yer değeri uzmanı!</p>
+      <button class="play-again" id="playAgainBtn" type="button">Tekrar Oyna</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================================
+   BASE-TEN BUILDER — game logic
+   ========================================================================= */
+(() => {
+  'use strict';
+
+  /* ---------- Config ---------- */
+  const TARGET_PROGRESS  = 10;
+  const INCREMENT_RIGHT = 1;
+  const DECREMENT_WRONG  = 0;   /* Grade 2: no penalty on wrong answers */
+  const FEEDBACK_DELAY   = 1100;
+
+  const MAX_TENS = 12;
+  const MAX_ONES = 19;
+
+  /* ---------- i18n ---------- */
+  const STRINGS = {
+    en: {
+      title:           '🏗️ Base-Ten Builder',
+      buildInstr:      'Build this number!',
+      buildPartialInstr: (target) => `Add blocks to make ${target}`,
+      identifyInstr:   'What number do these blocks show?',
+      pvTensInstr:     (n) => `In ${n}, how many TENS are there?`,
+      pvOnesInstr:     (n) => `In ${n}, how many ONES are there?`,
+      expTensInstr:    (n, o) => `${n} = ? + ${o}`,
+      expOnesInstr:    (n, t) => `${n} = ${t} + ?`,
+      compareInstr:    'Which number is BIGGER?',
+      compareInstrSm:  'Which number is SMALLER?',
+      tensLabel:       '🟧 TENS',
+      onesLabel:       '🟦 ONES',
+      tensHint:        'A <strong>ten</strong> is a tall rod = 10 cubes.',
+      onesHint:        'A <strong>one</strong> is a tiny cube.',
+      tensWord:        'tens',
+      onesWord:        'ones',
+      addTen:          '+10',
+      removeTen:       '−10',
+      addOne:          '+1',
+      removeOne:       '−1',
+      clear:           '🧹 Clear',
+      check:           '✓ Check Answer',
+      hint:            'Hint',
+      level:           'Level',
+      regroupToast:    '🎉 10 ones = 1 ten! That\'s regrouping!',
+      praises:         ['⭐ Perfect!','🎉 You got it!','✨ Awesome building!','👏 Place-value pro!','🚀 Math star!','💪 Brilliant!','🌟 Excellent!'],
+      levelUp:         (n) => `🚀 Level ${n}! Harder questions ahead!`,
+      wrongMsg:        (given, correct) => `🙂 You built ${given}. The target was ${correct}. Try the next one!`,
+      wrongMsgMC:      (correct) => `🙂 The answer was ${correct}. Try the next one!`,
+      rewardTitle:     '🎉 You Won! 🎉',
+      rewardMsg:       'Great job, place-value pro!',
+      playAgain:       'Play Again',
+      rewardMissing:   '(reward image missing)',
+      langToggle:      'TR',
+      progressLabel:   'Progress',
+      ariaRod:         'A ten. Tap to remove.',
+      ariaCube:        'A one. Tap to remove.',
+      ariaTensArea:    'Tens rods',
+      ariaOnesArea:    'Ones cubes',
+      ariaTensCount:   'Number of tens',
+      ariaOnesCount:   'Number of ones',
+      ariaAddTen:      'Add one ten',
+      ariaRemoveTen:   'Remove one ten',
+      ariaAddOne:      'Add one one',
+      ariaRemoveOne:   'Remove one one',
+    },
+    tr: {
+      title:           '🏗️ Onluk İnşaatçı',
+      buildInstr:      'Bu sayıyı oluştur!',
+      buildPartialInstr: (target) => `${target} sayısını oluşturmak için blok ekle`,
+      identifyInstr:   'Bu bloklar hangi sayıyı gösteriyor?',
+      pvTensInstr:     (n) => `${n} sayısında kaç onluk var?`,
+      pvOnesInstr:     (n) => `${n} sayısında kaç birlik var?`,
+      expTensInstr:    (n, o) => `${n} = ? + ${o}`,
+      expOnesInstr:    (n, t) => `${n} = ${t} + ?`,
+      compareInstr:    'Hangi sayı DAHA BÜYÜK?',
+      compareInstrSm:  'Hangi sayı DAHA KÜÇÜK?',
+      tensLabel:       '🟧 ONLUKLAR',
+      onesLabel:       '🟦 BİRLİKLER',
+      tensHint:        '<strong>10</strong> = bir onluk çubuk = 10 küçük küp.',
+      onesHint:        '<strong>1</strong> = tek bir küçük küp.',
+      tensWord:        'onluk',
+      onesWord:        'birlik',
+      addTen:          '+10',
+      removeTen:       '−10',
+      addOne:          '+1',
+      removeOne:       '−1',
+      clear:           '🧹 Temizle',
+      check:           '✓ Kontrol Et',
+      hint:            'İpucu',
+      level:           'Seviye',
+      regroupToast:    '🎉 10 birlik = 1 onluk! Bu bir gruplamadır!',
+      praises:         ['⭐ Mükemmel!','🎉 Doğru!','✨ Süper inşaat!','👏 Yer değeri uzmanı!','🚀 Matematik yıldızı!','💪 Harika!','🌟 Muhteşem!'],
+      levelUp:         (n) => `🚀 Seviye ${n}! Daha zor sorular geliyor!`,
+      wrongMsg:        (given, correct) => `🙂 ${given} sayısını oluşturdun. Hedef ${correct} idi. Bir sonrakini dene!`,
+      wrongMsgMC:      (correct) => `🙂 Cevap ${correct} idi. Bir sonrakini dene!`,
+      rewardTitle:     '🎉 Kazandın! 🎉',
+      rewardMsg:       'Aferin, yer değeri uzmanı!',
+      playAgain:       'Tekrar Oyna',
+      rewardMissing:   '(ödül resmi eksik)',
+      langToggle:      'EN',
+      progressLabel:   'İlerleme',
+      ariaRod:         'Bir onluk. Çıkarmak için dokun.',
+      ariaCube:        'Bir birlik. Çıkarmak için dokun.',
+      ariaTensArea:    'Onluk çubuklar',
+      ariaOnesArea:    'Birlik küpler',
+      ariaTensCount:   'Onluk sayısı',
+      ariaOnesCount:   'Birlik sayısı',
+      ariaAddTen:      'Bir onluk ekle',
+      ariaRemoveTen:   'Bir onluk çıkar',
+      ariaAddOne:      'Bir birlik ekle',
+      ariaRemoveOne:   'Bir birlik çıkar',
+    },
+  };
+
+  /* ---------- Language state ---------- */
+  let lang = localStorage.getItem('mf_lang') || 'tr';
+
+  const S = (key, ...args) => {
+    const val = STRINGS[lang][key];
+    return typeof val === 'function' ? val(...args) : val;
+  };
+
+  function setLang(newLang) {
+    lang = newLang;
+    localStorage.setItem('mf_lang', lang);
+    document.documentElement.lang = lang;
+    applyStaticStrings();
+    if (state.current) renderQuestion(state.current);
+  }
+
+  function applyStaticStrings() {
+    $titleEl.textContent        = S('title');
+    $rewardTitleEl.textContent  = S('rewardTitle');
+    $rewardMsgEl.textContent    = S('rewardMsg');
+    $playAgainBtnEl.textContent = S('playAgain');
+    $langToggleBtn.textContent  = S('langToggle');
+    $progressBar.setAttribute('aria-label', S('progressLabel'));
+    $tensLabelEl.innerHTML      = S('tensLabel');
+    $onesLabelEl.innerHTML      = S('onesLabel');
+    $tensHintEl.innerHTML       = S('tensHint');
+    $onesHintEl.innerHTML       = S('onesHint');
+    $addTensEl.textContent      = S('addTen');
+    $removeTensEl.textContent   = S('removeTen');
+    $addOnesEl.textContent      = S('addOne');
+    $removeOnesEl.textContent   = S('removeOne');
+    $clearBtnEl.textContent     = S('clear');
+    $checkBtnEl.textContent     = S('check');
+    $hintLabelEl.textContent    = S('hint');
+    $sumTensWordEl.textContent  = S('tensWord');
+    $sumOnesWordEl.textContent  = S('onesWord');
+    $regroupToastEl.textContent = S('regroupToast');
+    $levelLabelEl.textContent   = S('level');
+    /* ARIA labels */
+    $addTensEl.setAttribute('aria-label',    S('ariaAddTen'));
+    $removeTensEl.setAttribute('aria-label', S('ariaRemoveTen'));
+    $addOnesEl.setAttribute('aria-label',    S('ariaAddOne'));
+    $removeOnesEl.setAttribute('aria-label', S('ariaRemoveOne'));
+    $tensCountEl.setAttribute('aria-label',  S('ariaTensCount'));
+    $onesCountEl.setAttribute('aria-label',  S('ariaOnesCount'));
+    $tensAreaEl.setAttribute('aria-label',   S('ariaTensArea'));
+    $onesAreaEl.setAttribute('aria-label',   S('ariaOnesArea'));
+    document.title = S('title').replace(/^🏗️\s*/, '') + ' — Grade 2 Math';
+  }
+
+  /* ---------- Rewards ----------
+     Paths are relative to THIS file (games/<slug>.html),
+     so reward images live at ../images/ from here.
+  --------------------------------------------- */
+  const REWARDS = [
+    { src: '../images/1tl.jpg',  weight: 10, label: '1 TL'  },
+    { src: '../images/5tl.jpg',  weight: 50, label: '5 TL'  },
+    { src: '../images/10tl.jpg', weight: 20, label: '10 TL' },
+    { src: '../images/20tl.jpg', weight: 20, label: '20 TL' },
+  ];
+
+  /* ---------- Helpers ---------- */
+  const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function makeDistractors(answer, count = 2) {
+    const used = new Set([answer]);
+    const out = [];
+    const t = Math.floor(answer / 10);
+    const o = answer % 10;
+    const candidates = [
+      o * 10 + t,
+      (t + 1) * 10 + o,
+      (t - 1) * 10 + o,
+      t * 10 + (o + 1),
+      t * 10 + (o - 1),
+      t * 10 + (o + 2),
+      (t + 1) * 10 + (o + 1),
+    ];
+    for (const c of shuffle(candidates)) {
+      if (out.length >= count) break;
+      if (c >= 10 && c <= 99 && !used.has(c)) {
+        used.add(c);
+        out.push(c);
+      }
+    }
+    while (out.length < count) {
+      const d = rand(10, 99);
+      if (!used.has(d)) { used.add(d); out.push(d); }
+    }
+    return out;
+  }
+
+  /* ---------- Difficulty progression ----------
+     Level 1 (progress 0-2): small numbers 11-39, only build/identify
+     Level 2 (progress 3-5): full range 10-99 + place value + expanded form
+     Level 3 (progress 6+):  + compare + build-partial (workspace pre-filled)
+  -------------------------------------------------- */
+  function currentLevel() {
+    if (state.progress <= 2) return 1;
+    if (state.progress <= 5) return 2;
+    return 3;
+  }
+
+  function rangeForLevel() {
+    const lvl = currentLevel();
+    if (lvl === 1) return [11, 39];
+    if (lvl === 2) return [20, 89];
+    return [30, 99];
+  }
+
+  /* ---------- Question generators ---------- */
+  function genBuildMode() {
+    const lvl = currentLevel();
+    const [lo, hi] = rangeForLevel();
+    const choices = lvl === 1
+      ? [rand(11, 19), rand(2, 3) * 10, rand(lo, hi), rand(lo, hi)]
+      : [
+          rand(11, 19),           /* teens */
+          rand(2, 9) * 10,        /* round tens */
+          rand(2, 9) * 11,        /* doubles 22, 33, 44... */
+          rand(lo, hi),
+          rand(lo, hi),
+        ];
+    const target = pick(choices);
+    return { mode: 'build', target, instructionKey: 'buildInstr' };
+  }
+
+  function genIdentifyMode() {
+    const [lo, hi] = rangeForLevel();
+    const target = rand(lo, hi);
+    return {
+      mode: 'identify',
+      target,
+      choices: shuffle([target, ...makeDistractors(target, 2)]),
+      instructionKey: 'identifyInstr',
+    };
+  }
+
+  function genPlaceValueMode() {
+    const [lo, hi] = rangeForLevel();
+    const num = rand(Math.max(lo, 10), hi);
+    const askTens = Math.random() < 0.5;
+    const correct = askTens ? Math.floor(num / 10) : (num % 10);
+    const other = askTens ? (num % 10) : Math.floor(num / 10);
+    const set = new Set([correct]);
+    const choices = [correct];
+    if (!set.has(other)) { choices.push(other); set.add(other); }
+    while (choices.length < 3) {
+      const d = rand(0, 9);
+      if (!set.has(d)) { choices.push(d); set.add(d); }
+    }
+    return {
+      mode: 'placevalue',
+      target: num,
+      askTens,
+      correct,
+      choices: shuffle(choices),
+      instructionKey: askTens ? 'pvTensInstr' : 'pvOnesInstr',
+      instructionArg: num,
+    };
+  }
+
+  /* Expanded form: 47 = ? + 7  →  choose 40 */
+  function genExpandedFormMode() {
+    const [lo, hi] = rangeForLevel();
+    let num = rand(Math.max(lo, 21), hi);
+    if (num % 10 === 0) num += rand(1, 9);   /* avoid trivial round tens */
+    const tens = Math.floor(num / 10) * 10;
+    const ones = num % 10;
+    const askTens = Math.random() < 0.5;
+    const correct = askTens ? tens : ones;
+    const set = new Set([correct]);
+    const choices = [correct];
+    /* swap distractor (the OTHER digit's value) — classic confusion */
+    const swap = askTens ? Math.floor(num / 10) : ones * 10;
+    if (!set.has(swap) && swap !== 0) { choices.push(swap); set.add(swap); }
+    while (choices.length < 3) {
+      const d = askTens
+        ? (rand(1, 9) * 10)
+        : rand(1, 9);
+      if (!set.has(d)) { choices.push(d); set.add(d); }
+    }
+    return {
+      mode: 'expanded',
+      target: num,
+      tens, ones,
+      askTens,
+      correct,
+      choices: shuffle(choices),
+      instructionKey: askTens ? 'expTensInstr' : 'expOnesInstr',
+      instructionArg1: num,
+      instructionArg2: askTens ? ones : tens,
+    };
+  }
+
+  /* Compare: which is bigger (or smaller)? */
+  function genCompareMode() {
+    const [lo, hi] = rangeForLevel();
+    let a = rand(lo, hi);
+    let b = rand(lo, hi);
+    /* Make sure they share a digit sometimes (trickier) and aren't equal */
+    if (Math.random() < 0.5) {
+      const t = Math.floor(a / 10);
+      const o = a % 10;
+      b = o * 10 + t;       /* digit-swap variant */
+    }
+    while (b === a) b = rand(lo, hi);
+    const askBigger = Math.random() < 0.6;
+    const correct = askBigger ? Math.max(a, b) : Math.min(a, b);
+    return {
+      mode: 'compare',
+      a, b,
+      target: correct,
+      correct,
+      choices: shuffle([a, b]),
+      instructionKey: askBigger ? 'compareInstr' : 'compareInstrSm',
+    };
+  }
+
+  /* Build with workspace pre-filled — kid completes the rest */
+  function genBuildPartialMode() {
+    const [lo, hi] = rangeForLevel();
+    const target = rand(Math.max(lo, 25), hi);
+    const tTotal = Math.floor(target / 10);
+    const oTotal = target % 10;
+    /* Pre-fill either some tens OR some ones (not both) — keeps it clear */
+    const fillTens = Math.random() < 0.5 && tTotal >= 2;
+    const preTens = fillTens ? rand(1, tTotal - 1) : 0;
+    const preOnes = fillTens ? 0 : (oTotal >= 2 ? rand(1, Math.max(1, oTotal - 1)) : 0);
+    return {
+      mode: 'buildPartial',
+      target,
+      preTens,
+      preOnes,
+      instructionKey: 'buildPartialInstr',
+      instructionArg: target,
+    };
+  }
+
+  /* Generator pools keyed by level */
+  const POOL_L1 = [
+    { fn: genBuildMode,         weight: 60 },
+    { fn: genIdentifyMode,      weight: 40 },
+  ];
+  const POOL_L2 = [
+    { fn: genBuildMode,         weight: 35 },
+    { fn: genIdentifyMode,      weight: 20 },
+    { fn: genPlaceValueMode,    weight: 20 },
+    { fn: genExpandedFormMode,  weight: 25 },
+  ];
+  const POOL_L3 = [
+    { fn: genBuildMode,         weight: 15 },
+    { fn: genIdentifyMode,      weight: 12 },
+    { fn: genPlaceValueMode,    weight: 15 },
+    { fn: genExpandedFormMode,  weight: 18 },
+    { fn: genCompareMode,       weight: 20 },
+    { fn: genBuildPartialMode,  weight: 20 },
+  ];
+
+  function pickGenerator() {
+    const lvl = currentLevel();
+    const pool = lvl === 1 ? POOL_L1 : (lvl === 2 ? POOL_L2 : POOL_L3);
+    /* Avoid repeating the SAME mode twice in a row when possible */
+    const lastMode = state.current ? state.current.mode : null;
+    const filtered = pool.filter(g => {
+      const probeMode = ({
+        genBuildMode: 'build',
+        genIdentifyMode: 'identify',
+        genPlaceValueMode: 'placevalue',
+        genExpandedFormMode: 'expanded',
+        genCompareMode: 'compare',
+        genBuildPartialMode: 'buildPartial',
+      })[g.fn.name];
+      return probeMode !== lastMode;
+    });
+    const finalPool = filtered.length ? filtered : pool;
+    const total = finalPool.reduce((s, g) => s + g.weight, 0);
+    let r = Math.random() * total;
+    for (const g of finalPool) {
+      r -= g.weight;
+      if (r <= 0) return g.fn;
+    }
+    return finalPool[0].fn;
+  }
+
+  /* ---------- Game state ---------- */
+  const state = {
+    progress: 0,
+    current: null,
+    workspace: { tens: 0, ones: 0 },
+    prefill:   { tens: 0, ones: 0 },   /* locked pre-fills (buildPartial mode) */
+    locked: false,                      /* submit lock during feedback */
+    readOnly: false,                    /* full workspace read-only (identify/placevalue) */
+    hintOn: false,
+    busy: false,
+    lastLevel: 1,
+  };
+
+  /* ---------- DOM refs ---------- */
+  const $titleEl        = document.getElementById('titleEl');
+  const $progressBar    = document.getElementById('progressBar');
+  const $progressFill  = document.getElementById('progressFill');
+  const $progressText  = document.getElementById('progressText');
+  const $langToggleBtn  = document.getElementById('langToggleBtn');
+  const $instructionEl  = document.getElementById('instructionEl');
+  const $targetNumberEl = document.getElementById('targetNumberEl');
+  const $hintBtn        = document.getElementById('hintBtn');
+  const $hintLabelEl    = document.getElementById('hintLabel');
+  const $tensLabelEl   = document.getElementById('tensLabel');
+  const $onesLabelEl    = document.getElementById('onesLabel');
+  const $tensHintEl     = document.getElementById('tensHint');
+  const $onesHintEl     = document.getElementById('onesHint');
+  const $tensCountEl   = document.getElementById('tensCount');
+  const $onesCountEl   = document.getElementById('onesCount');
+  const $tensAreaEl    = document.getElementById('tensArea');
+  const $onesAreaEl    = document.getElementById('onesArea');
+  const $addTensEl     = document.getElementById('addTens');
+  const $removeTensEl   = document.getElementById('removeTens');
+  const $addOnesEl     = document.getElementById('addOnes');
+  const $removeOnesEl   = document.getElementById('removeOnes');
+  const $sumTensEl     = document.getElementById('sumTens');
+  const $sumOnesEl     = document.getElementById('sumOnes');
+  const $sumTotalEl    = document.getElementById('sumTotal');
+  const $sumTensWordEl = document.getElementById('sumTensWord');
+  const $sumOnesWordEl = document.getElementById('sumOnesWord');
+  const $summaryEl     = document.getElementById('summary');
+  const $actionRowEl   = document.getElementById('actionRow');
+  const $clearBtnEl    = document.getElementById('clearBtn');
+  const $checkBtnEl    = document.getElementById('checkBtn');
+  const $mcRowEl       = document.getElementById('mcRow');
+  const $feedbackEl    = document.getElementById('feedback');
+  const $regroupToastEl = document.getElementById('regroupToast');
+  const $rewardModal   = document.getElementById('rewardModal');
+  const $rewardTitleEl = document.getElementById('rewardTitle');
+  const $rewardMsgEl   = document.getElementById('rewardMsg');
+  const $rewardImageWrapEl = document.getElementById('rewardImageWrap');
+  const $confettiLayerEl = document.getElementById('confettiLayer');
+  const $playAgainBtnEl = document.getElementById('playAgainBtn');
+  const $workspaceEl    = document.getElementById('workspace');
+  const $levelChipEl    = document.getElementById('levelChip');
+  const $levelLabelEl   = document.getElementById('levelLabel');
+  const $levelValueEl   = document.getElementById('levelValue');
+
+  /* ---------- Progress bar ---------- */
+  function updateProgress() {
+    const pct = (state.progress / TARGET_PROGRESS) * 100;
+    $progressFill.style.width = pct + '%';
+    $progressText.textContent = state.progress + ' / ' + TARGET_PROGRESS;
+    $progressBar.setAttribute('aria-valuenow', String(state.progress));
+  }
+
+  /* ---------- Workspace render ---------- */
+  function tensRodHtml(locked) {
+    const cls = locked ? 'tens-rod locked' : 'tens-rod';
+    const aria = locked ? '' : ` role="button" tabindex="0" aria-label="${S('ariaRod')}"`;
+    return `<div class="${cls}"${aria}>` +
+           '<span></span><span></span><span></span><span></span><span></span>' +
+           '<span></span><span></span><span></span><span></span><span></span>' +
+           '</div>';
+  }
+  function onesCubeHtml(locked) {
+    const cls = locked ? 'ones-cube locked' : 'ones-cube';
+    const aria = locked ? '' : ` role="button" tabindex="0" aria-label="${S('ariaCube')}"`;
+    return `<div class="${cls}"${aria}></div>`;
+  }
+
+  function renderWorkspace() {
+    const { tens, ones } = state.workspace;
+    const pTens = state.prefill.tens || 0;
+    const pOnes = state.prefill.ones || 0;
+
+    $tensAreaEl.innerHTML = '';
+    for (let i = 0; i < tens; i++) {
+      const isLocked = state.readOnly || i < pTens;
+      $tensAreaEl.insertAdjacentHTML('beforeend', tensRodHtml(isLocked));
+    }
+    [...$tensAreaEl.querySelectorAll('.tens-rod:not(.locked)')].forEach((el) => {
+      el.addEventListener('click', () => removeTen());
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); removeTen(); }
+      });
+    });
+
+    $onesAreaEl.innerHTML = '';
+    for (let i = 0; i < ones; i++) {
+      const isLocked = state.readOnly || i < pOnes;
+      $onesAreaEl.insertAdjacentHTML('beforeend', onesCubeHtml(isLocked));
+    }
+    [...$onesAreaEl.querySelectorAll('.ones-cube:not(.locked)')].forEach((el) => {
+      el.addEventListener('click', () => removeOne());
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); removeOne(); }
+      });
+    });
+
+    $tensCountEl.textContent = tens;
+    $onesCountEl.textContent = ones;
+    $sumTensEl.textContent   = tens;
+    $sumOnesEl.textContent   = ones;
+    $sumTotalEl.textContent  = tens * 10 + ones;
+
+    const isBuildLike = state.current && (state.current.mode === 'build' || state.current.mode === 'buildPartial');
+    if (isBuildLike &&
+        (tens * 10 + ones) === state.current.target &&
+        (tens + ones) > 0) {
+      $summaryEl.classList.add('match');
+    } else {
+      $summaryEl.classList.remove('match');
+    }
+
+    $addTensEl.disabled    = (tens >= MAX_TENS);
+    $addOnesEl.disabled    = (ones >= MAX_ONES);
+    $removeTensEl.disabled = (tens <= pTens);
+    $removeOnesEl.disabled = (ones <= pOnes);
+  }
+
+  /* ---------- Workspace actions ---------- */
+  function addTen() {
+    if (state.locked || state.busy) return;
+    if (state.workspace.tens >= MAX_TENS) return;
+    state.workspace.tens++;
+    renderWorkspace();
+  }
+
+  function removeTen() {
+    if (state.locked || state.busy) return;
+    if (state.workspace.tens <= (state.prefill.tens || 0)) return;
+    state.workspace.tens--;
+    renderWorkspace();
+  }
+
+  function addOne() {
+    if (state.locked || state.busy) return;
+    if (state.workspace.ones >= MAX_ONES) return;
+    state.workspace.ones++;
+    renderWorkspace();
+    if (state.workspace.ones >= 10) regroupTenOnes();
+  }
+
+  function removeOne() {
+    if (state.locked || state.busy) return;
+    if (state.workspace.ones <= (state.prefill.ones || 0)) return;
+    state.workspace.ones--;
+    renderWorkspace();
+  }
+
+  function clearWorkspace() {
+    if (state.locked || state.busy) return;
+    /* Clear back to prefill (locked blocks stay) */
+    state.workspace = {
+      tens: state.prefill.tens || 0,
+      ones: state.prefill.ones || 0,
+    };
+    renderWorkspace();
+    $feedbackEl.textContent = '';
+    $feedbackEl.className = 'feedback';
+  }
+
+  /* ---------- Regrouping animation ---------- */
+  function regroupTenOnes() {
+    state.busy = true;
+    state.locked = true;
+    const cubes = [...$onesAreaEl.querySelectorAll('.ones-cube')].slice(0, 10);
+    cubes.forEach((c, i) => {
+      c.style.animationDelay = (i * 30) + 'ms';
+      c.classList.add('regrouping');
+    });
+
+    $regroupToastEl.textContent = S('regroupToast');
+    $regroupToastEl.classList.add('show');
+
+    setTimeout(() => {
+      state.workspace.ones -= 10;
+      state.workspace.tens += 1;
+      /* Regrouping may consume prefilled ones — clamp so removeOne stays valid */
+      state.prefill.ones = Math.min(state.prefill.ones || 0, state.workspace.ones);
+      renderWorkspace();
+      const newRod = $tensAreaEl.lastElementChild;
+      if (newRod) {
+        newRod.classList.add('regrouped');
+        setTimeout(() => newRod.classList.remove('regrouped'), 800);
+      }
+      state.busy = false;
+      state.locked = false;
+    }, 650);
+  }
+
+  /* ---------- Render a new question ---------- */
+  function renderQuestion(q) {
+    state.workspace = { tens: 0, ones: 0 };
+    state.prefill   = { tens: 0, ones: 0 };   /* pre-filled (locked) counts for buildPartial */
+    state.locked    = false;                   /* submit lock */
+    state.readOnly  = false;                   /* full workspace read-only (identify/placevalue) */
+    $feedbackEl.textContent = '';
+    $feedbackEl.className = 'feedback';
+
+    /* Resolve localized instruction (supports 0, 1 or 2 args) */
+    let instr;
+    if (q.instructionArg1 !== undefined) {
+      instr = S(q.instructionKey, q.instructionArg1, q.instructionArg2);
+    } else if (q.instructionArg !== undefined) {
+      instr = S(q.instructionKey, q.instructionArg);
+    } else {
+      instr = S(q.instructionKey);
+    }
+    $instructionEl.textContent = instr;
+
+    if (q.mode === 'build') {
+      $workspaceEl.style.display = '';
+      $targetNumberEl.textContent = q.target;
+      $targetNumberEl.style.display = '';
+      enableWorkspace(true);
+      $actionRowEl.hidden = false;
+      $mcRowEl.hidden = true;
+      $mcRowEl.innerHTML = '';
+      renderWorkspace();
+    } else if (q.mode === 'buildPartial') {
+      $workspaceEl.style.display = '';
+      state.workspace = { tens: q.preTens, ones: q.preOnes };
+      state.prefill   = { tens: q.preTens, ones: q.preOnes };
+      $targetNumberEl.textContent = q.target;
+      $targetNumberEl.style.display = '';
+      enableWorkspace(true);
+      $actionRowEl.hidden = false;
+      $mcRowEl.hidden = true;
+      $mcRowEl.innerHTML = '';
+      renderWorkspace();
+    } else if (q.mode === 'identify') {
+      $workspaceEl.style.display = '';
+      state.workspace = { tens: Math.floor(q.target / 10), ones: q.target % 10 };
+      state.readOnly = true;
+      $targetNumberEl.textContent = '?';
+      enableWorkspace(false);
+      $actionRowEl.hidden = true;
+      $mcRowEl.hidden = false;
+      renderMCChoices(q.choices, q.target);
+      renderWorkspace();
+    } else if (q.mode === 'placevalue') {
+      $workspaceEl.style.display = '';
+      state.workspace = { tens: Math.floor(q.target / 10), ones: q.target % 10 };
+      state.readOnly = true;
+      $targetNumberEl.textContent = q.target;
+      enableWorkspace(false);
+      $actionRowEl.hidden = true;
+      $mcRowEl.hidden = false;
+      renderMCChoices(q.choices, q.correct);
+      renderWorkspace();
+    } else if (q.mode === 'expanded') {
+      $workspaceEl.style.display = 'none';
+      $targetNumberEl.textContent = q.target;
+      $actionRowEl.hidden = true;
+      $mcRowEl.hidden = false;
+      renderMCChoices(q.choices, q.correct);
+    } else if (q.mode === 'compare') {
+      $workspaceEl.style.display = 'none';
+      $targetNumberEl.textContent = '';
+      $actionRowEl.hidden = true;
+      $mcRowEl.hidden = false;
+      renderMCChoices(q.choices, q.correct);
+    }
+  }
+
+  function enableWorkspace(enabled) {
+    [$addTensEl, $removeTensEl, $addOnesEl, $removeOnesEl].forEach(b => {
+      b.style.visibility = enabled ? '' : 'hidden';
+    });
+  }
+
+  function renderMCChoices(choices, correctValue) {
+    $mcRowEl.innerHTML = '';
+    choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mc-btn';
+      btn.textContent = String(c);
+      btn.dataset.value = String(c);
+      btn.addEventListener('click', () => onMCClicked(btn, c, correctValue));
+      $mcRowEl.appendChild(btn);
+    });
+  }
+
+  /* ---------- Answer submission ---------- */
+  function onCheckBuild() {
+    if (state.locked || state.busy) return;
+    if (!state.current) return;
+    const m = state.current.mode;
+    if (m !== 'build' && m !== 'buildPartial') return;
+    const built = state.workspace.tens * 10 + state.workspace.ones;
+    const target = state.current.target;
+    if (built === target) {
+      handleCorrect(null);
+    } else {
+      handleWrong(null, target, built);
+    }
+  }
+
+  function onMCClicked(btn, value, correctValue) {
+    if (state.locked || state.busy) return;
+    if (value === correctValue) {
+      handleCorrect(btn);
+    } else {
+      handleWrong(btn, correctValue, value);
+    }
+  }
+
+  function handleCorrect(btn) {
+    state.locked = true;
+    state.progress = Math.min(TARGET_PROGRESS, state.progress + INCREMENT_RIGHT);
+
+    const newLvl = currentLevel();
+    const leveledUp = newLvl > state.lastLevel;
+    state.lastLevel = newLvl;
+
+    $feedbackEl.textContent = leveledUp ? S('levelUp', newLvl) : pick(STRINGS[lang].praises);
+    $feedbackEl.className = 'feedback good';
+    if (btn) btn.classList.add('correct-flash');
+    updateProgress();
+    updateLevelChip(leveledUp);
+
+    if (state.progress >= TARGET_PROGRESS) {
+      setTimeout(showReward, 900);
+    } else {
+      setTimeout(nextQuestion, leveledUp ? FEEDBACK_DELAY + 600 : FEEDBACK_DELAY);
+    }
+  }
+
+  function handleWrong(btn, correct, given) {
+    state.locked = true;
+    state.progress = Math.max(0, state.progress - DECREMENT_WRONG);
+    const m = state.current.mode;
+    const isBuildLike = (m === 'build' || m === 'buildPartial');
+    const msg = isBuildLike
+      ? S('wrongMsg', given, correct)
+      : S('wrongMsgMC', correct);
+    $feedbackEl.textContent = msg;
+    $feedbackEl.className = 'feedback bad';
+    if (btn) btn.classList.add('wrong-flash');
+    if (!isBuildLike) {
+      [...$mcRowEl.querySelectorAll('.mc-btn')].forEach(b => {
+        if (parseInt(b.dataset.value, 10) === correct) b.classList.add('correct-flash');
+      });
+    }
+    updateProgress();
+    setTimeout(nextQuestion, FEEDBACK_DELAY + 700);
+  }
+
+  function updateLevelChip(bump) {
+    const lvl = currentLevel();
+    $levelValueEl.textContent = lvl;
+    if (bump) {
+      $levelChipEl.classList.remove('bump');
+      void $levelChipEl.offsetWidth;
+      $levelChipEl.classList.add('bump');
+    }
+  }
+
+  /* ---------- Main loop ---------- */
+  function nextQuestion() {
+    const gen = pickGenerator();
+    const q = gen();
+    state.current = q;
+    renderQuestion(q);
+  }
+
+  /* ---------- Hint toggle ---------- */
+  function toggleHint() {
+    state.hintOn = !state.hintOn;
+    $hintBtn.classList.toggle('active', state.hintOn);
+    $hintBtn.setAttribute('aria-pressed', String(state.hintOn));
+    $tensHintEl.classList.toggle('visible', state.hintOn);
+    $onesHintEl.classList.toggle('visible', state.hintOn);
+  }
+
+  /* ---------- Reward ---------- */
+  function chooseReward() {
+    const total = REWARDS.reduce((s, r) => s + r.weight, 0);
+    let r = Math.random() * total;
+    for (const reward of REWARDS) {
+      r -= reward.weight;
+      if (r <= 0) return reward;
+    }
+    return REWARDS[0];
+  }
+
+  function showReward() {
+    const reward = chooseReward();
+    $rewardImageWrapEl.innerHTML = '';
+
+    /* Preload the image. Only attach it to the DOM if it loaded
+       successfully; otherwise render the emoji fallback. This avoids
+       briefly showing the broken-image glyph alongside the fallback. */
+    const img = new Image();
+    img.alt = reward.label + ' reward';
+    img.onload = () => {
+      $rewardImageWrapEl.innerHTML = '';
+      $rewardImageWrapEl.appendChild(img);
+    };
+    img.onerror = () => {
+      $rewardImageWrapEl.innerHTML =
+        '<div class="fallback">🪙<br>' + reward.label +
+        '<br><span style="font-size:0.7rem;opacity:0.7;">' + S('rewardMissing') + '</span></div>';
+    };
+    img.src = reward.src;
+
+    spawnConfetti();
+    $rewardModal.hidden = false;
+    $playAgainBtnEl.focus();
+  }
+
+  function spawnConfetti() {
+    $confettiLayerEl.innerHTML = '';
+    const colors = ['#ff5252','#ffca28','#66bb6a','#42a5f5','#ab47bc','#ff9800'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti-piece';
+      c.style.left = Math.random() * 100 + '%';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (2 + Math.random() * 2) + 's';
+      c.style.animationDelay = (Math.random() * 0.6) + 's';
+      c.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+      $confettiLayerEl.appendChild(c);
+    }
+  }
+
+  /* ---------- Reset ---------- */
+  function resetGame() {
+    state.progress = 0;
+    state.locked = false;
+    state.busy = false;
+    state.readOnly = false;
+    state.prefill = { tens: 0, ones: 0 };
+    state.lastLevel = 1;
+    state.current = null;
+    state.hintOn = false;
+    $hintBtn.classList.remove('active');
+    $hintBtn.setAttribute('aria-pressed', 'false');
+    $tensHintEl.classList.remove('visible');
+    $onesHintEl.classList.remove('visible');
+    updateProgress();
+    updateLevelChip(false);
+    $rewardModal.hidden = true;
+    $confettiLayerEl.innerHTML = '';
+    nextQuestion();
+  }
+
+  /* ---------- Keyboard support ---------- */
+  document.addEventListener('keydown', (e) => {
+    if (state.locked || state.busy || !state.current) return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    const m = state.current.mode;
+    if (m === 'build' || m === 'buildPartial') {
+      if (e.key === 'q' || e.key === 'Q') addTen();
+      else if (e.key === 'a' || e.key === 'A') removeTen();
+      else if (e.key === 'w' || e.key === 'W' || e.key === '+') addOne();
+      else if (e.key === 's' || e.key === 'S' || e.key === '-') removeOne();
+      else if (e.key === 'Enter') onCheckBuild();
+      else if (e.key === 'Escape') clearWorkspace();
+    } else {
+      if (['1','2','3'].includes(e.key)) {
+        const btns = $mcRowEl.querySelectorAll('.mc-btn');
+        const idx = parseInt(e.key, 10) - 1;
+        if (btns[idx]) btns[idx].click();
+      }
+    }
+  });
+
+  /* ---------- Init ---------- */
+  $addTensEl.addEventListener('click', addTen);
+  $removeTensEl.addEventListener('click', removeTen);
+  $addOnesEl.addEventListener('click', addOne);
+  $removeOnesEl.addEventListener('click', removeOne);
+  $checkBtnEl.addEventListener('click', onCheckBuild);
+  $clearBtnEl.addEventListener('click', clearWorkspace);
+  $hintBtn.addEventListener('click', toggleHint);
+  $playAgainBtnEl.addEventListener('click', resetGame);
+  $langToggleBtn.addEventListener('click', () => setLang(lang === 'en' ? 'tr' : 'en'));
+
+  applyStaticStrings();
+  updateProgress();
+  updateLevelChip(false);
+  nextQuestion();
+
+})();
+</script>
+</body>
+</html>

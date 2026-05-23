@@ -1,0 +1,23 @@
+<!--
+  Copy this <article> into index.html inside the matching grade <section>.
+  Replace:
+    - color-bN       → one of color-b1..color-b6 (rainbow palette)
+    - <slug>         → the game's filename (kebab-case, no extension)
+    - <Title EN>     → English game title (with optional leading emoji)
+    - <Title TR>     → Turkish game title (with the same emoji)
+    - <Grade N>      → "Grade 1" or "Grade 2"  (TR: "1. Sınıf" / "2. Sınıf")
+    - MAT.x.x.x      → curriculum code from turkish-primary-math-curriculum-grades-1-2.md
+    - <summary EN>   → one-sentence concept summary in English
+    - <summary TR>   → one-sentence concept summary in Turkish
+  Visible text uses data-en / data-tr attributes; the page's language toggle
+  swaps textContent on cards using these attributes (already wired in index.html).
+-->
+<article class="game-card color-bN" data-grade="N" data-code="MAT.x.x.x">
+  <div class="game-card-head">
+    <span class="chip grade" data-en="Grade N" data-tr="N. Sınıf">Grade N</span>
+    <span class="chip code">MAT.x.x.x</span>
+  </div>
+  <h3 class="game-title" data-en="<Title EN>" data-tr="<Title TR>"><Title EN></h3>
+  <p class="summary" data-en="<summary EN>" data-tr="<summary TR>"><summary EN></p>
+  <a class="play-btn" href="games/<slug>.html" data-en="Play ▶" data-tr="Oyna ▶">Play ▶</a>
+</article>
