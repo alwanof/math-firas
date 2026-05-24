@@ -1,0 +1,596 @@
+/* =========================================================================
+   MATH FIRAS — Shared Design System  (shared/mf-design.css)
+   Sunny-City-Cartoon design spirit.
+   Load BEFORE any game-specific <style> block.
+   Do NOT edit the design tokens in individual files — change them here.
+   ========================================================================= */
+
+/* -------- Design tokens -------- */
+:root {
+  --sky-top:    #ffd9a8;
+  --sky-mid:    #ffb88c;
+  --sky-bottom: #87ceeb;
+  --sun:        #ffd23f;
+  --cloud:      #ffffff;
+  --road:       #3a3a4d;
+  --road-line:  #fff5b1;
+  --ink:        #1f1d2c;
+  --ink-soft:   #4a4760;
+  --good:       #4caf50;
+  --bad:        #ef4f4f;
+  --warm:       #ff7a59;
+  --tens-block: #ff7a59;
+  --tens-edge:  #b8401e;
+  --ones-block: #3f86ff;
+  --ones-edge:  #1b4dad;
+  --b1: #ff5252;
+  --b2: #ffca28;
+  --b3: #66bb6a;
+  --b4: #42a5f5;
+  --b5: #ab47bc;
+  --b6: #ff9800;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+/* Ensure the HTML hidden attribute always wins over author display rules */
+[hidden] { display: none !important; }
+
+body {
+  font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", "Trebuchet MS", system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 35%, var(--sky-bottom) 100%);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------- Header & progress bar -------- */
+header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255,255,255,0.85);
+  border-bottom: 4px solid var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.title {
+  font-size: clamp(1.2rem, 3.5vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-shadow: 2px 2px 0 var(--sun);
+  white-space: nowrap;
+}
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
+  max-width: 380px;
+}
+.progress-track {
+  flex: 1;
+  height: 22px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff5252 0%, #ffca28 50%, #66bb6a 100%);
+  transition: width 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+.progress-text {
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* -------- Header right group -------- */
+.header-end {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* -------- Language toggle -------- */
+.lang-toggle {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 0.3rem 0.8rem;
+  background: var(--ink);
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.lang-toggle:hover { background: var(--ink-soft); }
+.lang-toggle:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
+.lang-toggle:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+/* -------- Difficulty badge (games override .medium / .hard colors) -------- */
+.difficulty-badge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 0.15rem 0.5rem;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--sun);
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* -------- Ambient scene primitives -------- */
+
+/* Sun */
+.sun {
+  position: absolute;
+  top: 70px;
+  right: 8%;
+  width: 80px;
+  height: 80px;
+  background: var(--sun);
+  border-radius: 50%;
+  box-shadow: 0 0 50px rgba(255,210,63,0.7), 4px 4px 0 var(--ink);
+  border: 4px solid var(--ink);
+}
+
+/* Clouds */
+.cloud {
+  position: absolute;
+  background: var(--cloud);
+  border: 3px solid var(--ink);
+  border-radius: 50px;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.cloud::before, .cloud::after {
+  content: "";
+  position: absolute;
+  background: var(--cloud);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+}
+.cloud-1 { top: 80px;  left: 5%;   width: 90px; height: 28px; animation: drift 50s linear infinite; }
+.cloud-1::before { width: 40px; height: 40px; top: -22px; left: 14px; }
+.cloud-1::after  { width: 30px; height: 30px; top: -16px; left: 50px; }
+.cloud-2 { top: 150px; left: 35%;  width: 70px; height: 22px; animation: drift 65s linear infinite; animation-delay: -25s; }
+.cloud-2::before { width: 32px; height: 32px; top: -18px; left: 10px; }
+.cloud-2::after  { width: 24px; height: 24px; top: -12px; left: 36px; }
+.cloud-3 { top: 110px; right: 25%; width: 80px; height: 26px; animation: drift 55s linear infinite; animation-delay: -15s; }
+.cloud-3::before { width: 36px; height: 36px; top: -20px; left: 12px; }
+.cloud-3::after  { width: 26px; height: 26px; top: -14px; left: 42px; }
+@keyframes drift {
+  0%   { transform: translateX(-200px); }
+  100% { transform: translateX(calc(100vw + 200px)); }
+}
+
+/* Skyline horizon row */
+.skyline {
+  position: absolute;
+  bottom: 80px;
+  left: 0; right: 0;
+  height: 180px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 2vw;
+  pointer-events: none;
+  opacity: 0.6;
+}
+.skyline .b {
+  flex: 1;
+  margin: 0 3px;
+  border: 4px solid var(--ink);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  position: relative;
+}
+.skyline .b::before {
+  content: "";
+  position: absolute;
+  inset: 12px 10px auto 10px;
+  height: calc(100% - 18px);
+  background: radial-gradient(circle at center, var(--sun) 30%, transparent 31%) 0 0/20px 20px;
+  opacity: 0.7;
+}
+.skyline .b:nth-child(1)  { height: 90px;  background: var(--b1); }
+.skyline .b:nth-child(2)  { height: 130px; background: var(--b2); }
+.skyline .b:nth-child(3)  { height: 70px;  background: var(--b3); }
+.skyline .b:nth-child(4)  { height: 110px; background: var(--b4); }
+.skyline .b:nth-child(5)  { height: 90px;  background: var(--b5); }
+.skyline .b:nth-child(6)  { height: 150px; background: var(--b1); }
+.skyline .b:nth-child(7)  { height: 100px; background: var(--b6); }
+.skyline .b:nth-child(8)  { height: 140px; background: var(--b3); }
+.skyline .b:nth-child(9)  { height: 80px;  background: var(--b4); }
+.skyline .b:nth-child(10) { height: 120px; background: var(--b2); }
+
+/* Road / ground strip */
+.road {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 80px;
+  background: var(--road);
+  border-top: 4px solid var(--ink);
+  z-index: 1;
+  overflow: hidden;
+}
+.road::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 6px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(
+    to right,
+    var(--road-line) 0 40px,
+    transparent 40px 80px
+  );
+  animation: roadlines 1.5s linear infinite;
+}
+@keyframes roadlines { to { background-position: -80px 0; } }
+
+/* Cars (used by number_city and index) */
+.car {
+  position: absolute;
+  bottom: 8px;
+  font-size: 3rem;
+  filter: drop-shadow(2px 2px 0 var(--ink));
+  animation: drive 10s linear infinite;
+}
+.car-1 { animation-duration: 10s; animation-delay: 0s; }
+.car-2 { animation: driveRev 8s linear infinite; animation-delay: -3s; bottom: 38px; }
+.car-3 { animation-duration: 13s; animation-delay: -2s; }
+@keyframes drive    { 0% { left: -80px; } 100% { left: calc(100% + 40px); } }
+@keyframes driveRev { 0% { left: calc(100% + 40px); transform: scaleX(-1); } 100% { left: -80px; transform: scaleX(-1); } }
+
+/* -------- Base-10 block visualization -------- */
+/* Display-only (read-only) rendering used by number_city questions and MF.renderBlocks(). */
+/* Interactive variants (cursor, hover, animation) are added locally per game. */
+.blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 8px;
+  max-width: 100%;
+}
+.tens-rod {
+  display: grid;
+  grid-template-rows: repeat(10, 1fr);
+  width: 18px;
+  height: 100px;
+  background: var(--tens-block);
+  border: 2px solid var(--tens-edge);
+  border-radius: 4px;
+}
+.tens-rod > span { border-bottom: 1px solid var(--tens-edge); }
+.tens-rod > span:last-child { border-bottom: none; }
+.ones-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 70px;
+  align-items: flex-end;
+}
+.ones-cube {
+  width: 14px;
+  height: 14px;
+  background: var(--ones-block);
+  border: 2px solid var(--ones-edge);
+  border-radius: 3px;
+}
+.zero-marker {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.word-card {
+  font-size: clamp(1.4rem, 5vw, 2.6rem);
+  padding: 0.5rem 1.5rem;
+  background: #fff7d6;
+  border: 4px dashed var(--warm);
+  border-radius: 16px;
+  color: var(--ink);
+  max-width: 100%;
+  word-break: keep-all;
+}
+.word-label {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+.big-numeral {
+  font-size: clamp(3rem, 10vw, 6rem);
+  font-weight: 900;
+  color: var(--warm);
+  text-shadow: 4px 4px 0 var(--ink);
+  padding: 0 1rem;
+  line-height: 1;
+}
+
+/* -------- Multiple-choice building-style buttons -------- */
+.answer-area {
+  width: min(720px, 92vw);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+.choice-btn {
+  position: relative;
+  flex: 1 1 130px;
+  max-width: 200px;
+  min-height: 110px;
+  border: 4px solid var(--ink);
+  border-radius: 12px 12px 4px 4px;
+  background: var(--b4);
+  color: #fff;
+  font-family: inherit;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.15;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  padding: 1.6rem 0.5rem 1.2rem;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.28);
+}
+.choice-btn:not(:disabled):hover  { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+.choice-btn:not(:disabled):active { transform: translate(2px, 2px);   box-shadow: 2px 2px 0 var(--ink); }
+.choice-btn:focus-visible { outline: 4px solid var(--sun); outline-offset: 2px; }
+.choice-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.choice-btn::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 12px;
+  background: var(--ink);
+  border-radius: 4px 4px 0 0;
+}
+.choice-btn::after {
+  content: "";
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  height: 14px;
+  background: radial-gradient(circle, var(--sun) 40%, transparent 41%) 0 0/16px 14px;
+  opacity: 0.55;
+}
+.choice-btn.color-1 { background: var(--b1); }
+.choice-btn.color-2 { background: var(--b3); }
+.choice-btn.color-3 { background: var(--b4); }
+.choice-btn.color-4 { background: var(--b5); }
+.choice-btn.color-5 { background: var(--b6); }
+.choice-btn.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; }
+.choice-btn.wrong-flash   { animation: wrongShake  0.5s ease;  background: var(--bad)  !important; }
+
+/* Block-style choice button variant */
+.choice-blocks {
+  min-height: 140px;
+  background: #fff !important;
+  color: var(--ink);
+  padding: 10px 6px;
+}
+.choice-blocks::after { display: none; }
+.choice-blocks .blocks { padding: 0; gap: 4px; }
+.choice-blocks .tens-rod  { height: 60px; width: 10px; }
+.choice-blocks .ones-cube { width: 10px;  height: 10px; }
+.choice-blocks .ones-group { gap: 2px; max-width: 50px; }
+
+/* -------- On-screen numpad -------- */
+.numpad-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.typed-display {
+  font-size: 3rem;
+  font-weight: 900;
+  min-height: 60px;
+  min-width: 140px;
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border: 4px dashed var(--ink);
+  border-radius: 12px;
+  background: #fff;
+  margin: 0.25rem 0;
+  letter-spacing: 0.1em;
+  color: var(--warm);
+  text-shadow: 2px 2px 0 var(--ink);
+}
+.typed-display.empty { color: #ccc; }
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  width: min(280px, 90vw);
+}
+.numpad button {
+  font-family: inherit;
+  font-size: 1.6rem;
+  font-weight: 900;
+  padding: 0.7rem;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.numpad button:not(:disabled):active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.numpad button:disabled { opacity: 0.6; cursor: not-allowed; }
+.numpad button.action { background: var(--b6); color: #fff; }
+.numpad button.submit { background: var(--good); color: #fff; }
+.numpad button:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+/* -------- Feedback line -------- */
+.feedback {
+  min-height: 40px;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  font-weight: 800;
+  padding: 0.4rem 1rem;
+  text-align: center;
+}
+.feedback.good { color: var(--good); animation: bounceIn 0.5s ease; }
+.feedback.bad  { color: var(--bad);  animation: bounceIn 0.5s ease; }
+@keyframes bounceIn {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* -------- Reward modal -------- */
+.reward-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(31,29,44,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+.reward-modal[hidden] { display: none; }
+.reward-card {
+  background: #fff;
+  border: 5px solid var(--ink);
+  border-radius: 24px;
+  padding: 1.5rem 2rem;
+  box-shadow: 10px 10px 0 var(--ink);
+  text-align: center;
+  max-width: 500px;
+  width: 92vw;
+  animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+  z-index: 2;
+}
+@keyframes popIn {
+  0%   { transform: scale(0) rotate(-15deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.reward-card h2 {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  margin-bottom: 1rem;
+  color: var(--warm);
+  text-shadow: 3px 3px 0 var(--ink);
+}
+.reward-image-wrap {
+  width: 220px;
+  height: 140px;
+  margin: 0 auto 1rem;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5e9c5, #e8c873);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.reward-image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.reward-image-wrap .fallback {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--ink);
+  padding: 0.5rem;
+  text-align: center;
+  line-height: 1.3;
+}
+.reward-msg {
+  font-size: 1.05rem;
+  margin-bottom: 1.25rem;
+  color: var(--ink-soft);
+}
+.play-again {
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 900;
+  padding: 0.8rem 2rem;
+  background: var(--good);
+  color: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: pointer;
+}
+.play-again:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.play-again:active { transform: translate(2px, 2px);  box-shadow: 2px 2px 0 var(--ink); }
+.play-again:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+
+/* -------- Confetti -------- */
+.confetti-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  top: -20px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.9; }
+}
+
+/* -------- Shared answer flash keyframes -------- */
+@keyframes correctPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+@keyframes wrongShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+/* -------- Shared mobile breakpoint -------- */
+@media (max-width: 500px) {
+  header { padding: 0.5rem 0.75rem; gap: 0.5rem; }
+  .title { font-size: 1.1rem; }
+  .lang-toggle { font-size: 0.75rem; padding: 0.25rem 0.6rem; }
+  .header-end { gap: 0.35rem; }
+  .difficulty-badge { font-size: 0.6rem; }
+  .sun { width: 60px; height: 60px; top: 70px; }
+  .skyline { height: 130px; bottom: 80px; }
+  .tens-rod { height: 80px; }
+}

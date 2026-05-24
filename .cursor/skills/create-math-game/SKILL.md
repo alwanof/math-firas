@@ -5,7 +5,7 @@ description: Build a new standalone HTML/CSS/JS math game for Turkish primary Gr
 
 # Create Math Game
 
-Build a new single-file math game for the **math-firas** project. Every game must (a) match the visual spirit of `@games/number_city.html`, (b) work in **English and Turkish**, and (c) be registered in `@index.html` with a meaningful bilingual title.
+Build a new math game for the **math-firas** project. Every game must (a) match the visual spirit of `@games/number_city.html`, (b) work in **English and Turkish**, (c) link `shared/mf-design.css` and `shared/mf-core.js` for all boilerplate, and (d) be registered in `@index.html` with a meaningful bilingual title.
 
 ## When to use
 
@@ -20,8 +20,9 @@ The user asks for a new game by any of:
 1. `@prompts.md` — the 40 game briefs. Find the prompt matching the user's request.
 2. `@turkish-primary-math-curriculum-grades-1-2.md` — confirm the curriculum code and grade.
 3. `@DESIGN_SPIRIT.md` — the visual identity bible.
-4. `@games/number_city.html` — the reference implementation. **Open it and use it as a structural template.** Copy its file layout, helpers (`rand`, `pick`, `shuffle`), state machine, focus trap, confetti, language toggle, and reward modal verbatim where the concept allows.
-5. `@.cursor/rules/design-spirit.mdc`, `@.cursor/rules/game-conventions.mdc`, `@.cursor/rules/index-registry.mdc` — the binding rules.
+4. `@games/number_city.html` — the reference implementation. **Open it for game-logic patterns** (state machine, question generators, STRINGS table structure). Do **not** copy its `<style>` boilerplate or reward/confetti JS — those now live in the shared files.
+5. `@shared/mf-design.css` + `@shared/mf-core.js` — the shared layer that every game must link. All design tokens, ambient scene, modal, confetti, and helper functions live here.
+6. `@.cursor/rules/design-spirit.mdc`, `@.cursor/rules/game-conventions.mdc`, `@.cursor/rules/index-registry.mdc` — the binding rules.
 
 ## Workflow
 
@@ -96,10 +97,196 @@ Pick the prompt from `prompts.md` that matches the user's request. Note:
 
 ### Step 3 — Scaffold
 
-Read `@games/number_city.html` and copy its skeleton:
-- The full `<style>` block — palette tokens, header, progress bar, ambient layers (sky/sun/clouds/skyline/road), question card, choice button (`.choice-btn` + `.color-1..5`), numpad styles, feedback animations, reward modal, confetti, responsive breakpoint.
-- The full `<script>` IIFE skeleton — `STRINGS` table, `lang` state + `localStorage` persistence, `S()` helper, `rand`/`pick`/`shuffle`, the `state` object, DOM refs, `updateProgress`, `renderQuestion`, `submitAnswer`, `nextQuestion`, `chooseReward`/`showReward`, `trapFocus`/`releaseFocus`, `spawnConfetti`, `resetGame`, keyboard handler, init.
-- Theme tweaks (e.g. swap "city skyline" for a "garden" or "rocket launch pad" silhouette) are allowed but **must keep the 5 ambient layers** (sky → sun → clouds → horizon → ground) and the sticker aesthetic.
+Start from this minimal shell (all boilerplate comes from the shared files):
+
+```html
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title><!-- TR title here --></title>
+<link rel="stylesheet" href="../shared/mf-design.css">
+<style>
+/* ============================================================
+   <GAME NAME EN> / <GAME NAME TR> — Grade <N> Math Game
+   Target concept: <concept>
+   Curriculum: MAT.<x>.<y>.<z>
+   ============================================================ */
+
+/* Ambient container */
+.ambient { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+
+main {
+  position: relative; z-index: 2; flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.75rem;
+  padding: 0.75rem 1rem 100px; overflow-y: auto;
+}
+
+/* Game-specific scene art, custom widgets, etc. */
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="ambient" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+  </div>
+  <div class="road" aria-hidden="true">
+    <div class="car car-1">🚗</div>
+    <div class="car car-2">🚙</div>
+    <div class="car car-3">🚕</div>
+  </div>
+
+  <header>
+    <div class="title" id="titleEl"><!-- title --></div>
+    <div class="progress-wrap" role="progressbar"
+         aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" id="progressBar">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0 / 10</div>
+    </div>
+    <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
+  </header>
+
+  <main>
+    <!-- question area, choice buttons / numpad, feedback -->
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+  </main>
+
+  <div class="reward-modal" id="rewardModal" hidden
+       role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <div class="reward-card">
+      <h2 id="rewardTitle">🎉 Kazandın! 🎉</h2>
+      <div class="reward-image-wrap" id="rewardImageWrap"></div>
+      <p class="reward-msg" id="rewardMsg">Harika iş!</p>
+      <button class="play-again" id="playAgainBtn" type="button">Tekrar Oyna</button>
+    </div>
+  </div>
+
+</div>
+<script src="../shared/mf-core.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const { rand, pick, shuffle, makeDistractors, turkishWord, renderBlocks,
+          loadRewards, chooseReward, mountReward,
+          spawnConfetti, trapFocus, releaseFocus } = MF;
+
+  const TARGET_PROGRESS = 10;
+  const INCREMENT_RIGHT = 1;
+  const DECREMENT_WRONG = 0;
+  const FEEDBACK_DELAY  = 1100;
+
+  const STRINGS = {
+    en: {
+      title:        '<!-- EN title -->',
+      praises:      ['⭐ Perfect!','🎉 You got it!','✨ Awesome!','👏 Brilliant!'],
+      wrongMsg:     (a) => `🙂 The answer was ${a}.`,
+      rewardTitle:  '🎉 You Won! 🎉',
+      rewardMsg:    '<!-- EN reward msg -->',
+      playAgain:    'Play Again',
+      rewardMissing:'(reward image missing)',
+      langToggle:   'TR',
+      progressLabel:'Progress',
+      // ... add all other visible strings ...
+    },
+    tr: {
+      title:        '<!-- TR title -->',
+      praises:      ['⭐ Mükemmel!','🎉 Doğru!','✨ Süper!','👏 Harika!'],
+      wrongMsg:     (a) => `🙂 Cevap ${a} idi.`,
+      rewardTitle:  '🎉 Kazandın! 🎉',
+      rewardMsg:    '<!-- TR reward msg -->',
+      playAgain:    'Tekrar Oyna',
+      rewardMissing:'(ödül resmi eksik)',
+      langToggle:   'EN',
+      progressLabel:'İlerleme',
+      // ... add all other visible strings ...
+    },
+  };
+
+  let lang = localStorage.getItem('mf_lang') || 'tr';
+  const S = (k, ...a) => { const v = STRINGS[lang][k]; return typeof v === 'function' ? v(...a) : v; };
+
+  const rewardStore = loadRewards();
+
+  /* ---------- DOM refs ---------- */
+  /* ... add your refs ... */
+
+  function applyStaticStrings() {
+    document.documentElement.lang = lang;
+    document.title = S('title').replace(/^.*?\s/, '') + ' — Grade N Math';
+    /* update titleEl, rewardTitle, rewardMsg, playAgain, langToggle, progressBar aria-label ... */
+  }
+
+  function setLang(next) { lang = next; localStorage.setItem('mf_lang', lang); applyStaticStrings(); if (state.current) renderQuestion(state.current); }
+
+  function updateProgress() {
+    const pct = (state.progress / TARGET_PROGRESS) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = state.progress + ' / ' + TARGET_PROGRESS;
+    document.getElementById('progressBar').setAttribute('aria-valuenow', String(state.progress));
+  }
+
+  const state = { progress: 0, current: null, locked: false };
+
+  /* ---------- Question generators ---------- */
+  function nextQuestion() { /* ... */ }
+  function renderQuestion(q) { /* ... */ }
+  function handleCorrect() {
+    state.locked = true;
+    state.progress = Math.min(TARGET_PROGRESS, state.progress + INCREMENT_RIGHT);
+    document.getElementById('feedback').textContent = pick(STRINGS[lang].praises);
+    document.getElementById('feedback').className = 'feedback good';
+    updateProgress();
+    if (state.progress >= TARGET_PROGRESS) setTimeout(showReward, 900);
+    else setTimeout(nextQuestion, FEEDBACK_DELAY);
+  }
+  function handleWrong(correct) {
+    state.locked = true;
+    state.progress = Math.max(0, state.progress - DECREMENT_WRONG);
+    document.getElementById('feedback').textContent = S('wrongMsg', correct);
+    document.getElementById('feedback').className = 'feedback bad';
+    updateProgress();
+    setTimeout(nextQuestion, FEEDBACK_DELAY + 700);
+  }
+
+  function showReward() {
+    const reward = chooseReward(rewardStore.list);
+    mountReward(document.getElementById('rewardImageWrap'), reward, S('rewardMissing'));
+    spawnConfetti(document.getElementById('confettiLayer'));
+    document.getElementById('rewardModal').hidden = false;
+    trapFocus(document.getElementById('rewardModal'));
+    document.getElementById('playAgainBtn').focus();
+  }
+
+  function resetGame() {
+    releaseFocus(document.getElementById('rewardModal'));
+    state.progress = 0; state.locked = false;
+    updateProgress();
+    document.getElementById('rewardModal').hidden = true;
+    document.getElementById('confettiLayer').innerHTML = '';
+    nextQuestion();
+  }
+
+  document.getElementById('playAgainBtn').addEventListener('click', resetGame);
+  document.getElementById('langToggleBtn').addEventListener('click', () => setLang(lang === 'tr' ? 'en' : 'tr'));
+
+  applyStaticStrings();
+  updateProgress();
+  nextQuestion();
+})();
+</script>
+</body>
+</html>
+```
+
+Theme tweaks (e.g. swap "city skyline" for a "garden" silhouette) are allowed but **must keep the 5 ambient layers** (sky gradient via shared → sun → clouds → horizon/skyline → road) and the sticker aesthetic. Replace `.car` elements with thematic alternatives (boats, animals, trains) and override the `.road` background locally if needed.
 
 ### Step 4 — Question generators
 
@@ -160,7 +347,10 @@ Mentally walk through:
 
 ## Anti-patterns
 
-- ❌ Multiple HTML files per game, external CSS/JS, CDN fonts, framework imports.
+- ❌ Skipping `shared/mf-design.css` + `shared/mf-core.js` and copying boilerplate inline.
+- ❌ Re-defining design tokens, `.feedback`, `.reward-modal`, confetti, or `@keyframes` that already live in shared CSS.
+- ❌ Declaring local `rand`, `pick`, `shuffle`, `chooseReward`, `spawnConfetti`, or `mountReward` — use `MF.*`.
+- ❌ Multiple HTML files per game, external CDN CSS/JS, CDN fonts, build tools.
 - ❌ Hard-coded English-only or Turkish-only strings.
 - ❌ A "score / X questions complete" UX. The loop is **infinite until the bar fills**.
 - ❌ Blurred or gray box-shadows. Always solid `--ink` offset.
@@ -192,5 +382,7 @@ const s=c.split('<script>')[1]||'';
 
 - Card markup template: [templates/index-card.html](templates/index-card.html)
 - Title translation table: see Step 2 above (also exported in [reference.md](reference.md))
-- Reference implementation: `@games/number_city.html`
+- Reference implementation (game logic): `@games/number_city.html`
+- Shared CSS + JS API: `@shared/mf-design.css`, `@shared/mf-core.js`
+- Full MF.* API reference: `@.cursor/rules/game-conventions.mdc` (MF.* API table)
 - Visual identity bible: `@DESIGN_SPIRIT.md`

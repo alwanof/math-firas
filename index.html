@@ -4,47 +4,20 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>Matematik Şehri — Math Firas</title>
+<link rel="stylesheet" href="shared/mf-design.css">
 <style>
 /* =========================================================================
-   MATH FIRAS — Launcher
-   Sunny-City-Cartoon design spirit (see DESIGN_SPIRIT.md)
+   MATH FIRAS — Launcher (launcher-specific styles only)
    ========================================================================= */
 
-/* -------- Design tokens (canonical palette, do not change) -------- */
-:root {
-  --sky-top:    #ffd9a8;
-  --sky-mid:    #ffb88c;
-  --sky-bottom: #87ceeb;
-  --sun:        #ffd23f;
-  --cloud:      #ffffff;
-  --road:       #3a3a4d;
-  --road-line:  #fff5b1;
-  --ink:        #1f1d2c;
-  --ink-soft:   #4a4760;
-  --good:       #4caf50;
-  --bad:        #ef4f4f;
-  --warm:       #ff7a59;
-  --b1: #ff5252;
-  --b2: #ffca28;
-  --b3: #66bb6a;
-  --b4: #42a5f5;
-  --b5: #ab47bc;
-  --b6: #ff9800;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { min-height: 100%; }
-
+/* -------- Override shared body to allow scrolling -------- */
 body {
-  font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", "Trebuchet MS", system-ui, sans-serif;
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 35%, var(--sky-bottom) 100%);
-  background-attachment: fixed;
+  overflow: auto;
   min-height: 100dvh;
-  -webkit-tap-highlight-color: transparent;
+  background-attachment: fixed;
 }
 
-/* -------- Ambient layer (sun, clouds, skyline, road) -------- */
+/* -------- Ambient uses fixed positioning for scrollable layout -------- */
 .ambient {
   position: fixed;
   inset: 0;
@@ -52,134 +25,14 @@ body {
   z-index: 0;
   overflow: hidden;
 }
-.sun {
-  position: absolute;
-  top: 90px;
-  right: 8%;
-  width: 80px;
-  height: 80px;
-  background: var(--sun);
-  border-radius: 50%;
-  box-shadow: 0 0 50px rgba(255,210,63,0.7), 4px 4px 0 var(--ink);
-  border: 4px solid var(--ink);
-}
-.cloud {
-  position: absolute;
-  background: var(--cloud);
-  border: 3px solid var(--ink);
-  border-radius: 50px;
-  box-shadow: 4px 4px 0 var(--ink);
-}
-.cloud::before, .cloud::after {
-  content: "";
-  position: absolute;
-  background: var(--cloud);
-  border: 3px solid var(--ink);
-  border-radius: 50%;
-}
-.cloud-1 { top: 100px; left: 5%;   width: 90px; height: 28px; animation: drift 50s linear infinite; }
-.cloud-1::before { width: 40px; height: 40px; top: -22px; left: 14px; }
-.cloud-1::after  { width: 30px; height: 30px; top: -16px; left: 50px; }
-.cloud-2 { top: 170px; left: 35%;  width: 70px; height: 22px; animation: drift 65s linear infinite; animation-delay: -25s; }
-.cloud-2::before { width: 32px; height: 32px; top: -18px; left: 10px; }
-.cloud-2::after  { width: 24px; height: 24px; top: -12px; left: 36px; }
-.cloud-3 { top: 130px; right: 22%; width: 80px; height: 26px; animation: drift 55s linear infinite; animation-delay: -15s; }
-.cloud-3::before { width: 36px; height: 36px; top: -20px; left: 12px; }
-.cloud-3::after  { width: 26px; height: 26px; top: -14px; left: 42px; }
-@keyframes drift {
-  0%   { transform: translateX(-200px); }
-  100% { transform: translateX(calc(100vw + 200px)); }
-}
 
-.skyline {
-  position: fixed;
-  bottom: 80px;
-  left: 0; right: 0;
-  height: 160px;
-  display: flex;
-  align-items: flex-end;
-  padding: 0 2vw;
-  pointer-events: none;
-  opacity: 0.55;
-  z-index: 0;
-}
-.skyline .b {
-  flex: 1;
-  margin: 0 3px;
-  border: 4px solid var(--ink);
-  border-bottom: none;
-  border-radius: 6px 6px 0 0;
-  position: relative;
-}
-.skyline .b::before {
-  content: "";
-  position: absolute;
-  inset: 12px 10px auto 10px;
-  height: calc(100% - 18px);
-  background: radial-gradient(circle at center, var(--sun) 30%, transparent 31%) 0 0/20px 20px;
-  opacity: 0.7;
-}
-.skyline .b:nth-child(1)  { height: 90px;  background: var(--b1); }
-.skyline .b:nth-child(2)  { height: 130px; background: var(--b2); }
-.skyline .b:nth-child(3)  { height: 70px;  background: var(--b3); }
-.skyline .b:nth-child(4)  { height: 110px; background: var(--b4); }
-.skyline .b:nth-child(5)  { height: 90px;  background: var(--b5); }
-.skyline .b:nth-child(6)  { height: 140px; background: var(--b1); }
-.skyline .b:nth-child(7)  { height: 100px; background: var(--b6); }
-.skyline .b:nth-child(8)  { height: 130px; background: var(--b3); }
-.skyline .b:nth-child(9)  { height: 80px;  background: var(--b4); }
-.skyline .b:nth-child(10) { height: 120px; background: var(--b2); }
+/* Override shared absolute skyline/road to fixed for scrollable page */
+.skyline { position: fixed; bottom: 80px; }
+.road    { position: fixed; bottom: 0; }
 
-.road {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: 80px;
-  background: var(--road);
-  border-top: 4px solid var(--ink);
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.road::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0; right: 0;
-  height: 6px;
-  transform: translateY(-50%);
-  background: repeating-linear-gradient(
-    to right,
-    var(--road-line) 0 40px,
-    transparent 40px 80px
-  );
-  animation: roadlines 1.5s linear infinite;
-}
-@keyframes roadlines { to { background-position: -80px 0; } }
-.car {
-  position: absolute;
-  bottom: 8px;
-  font-size: 3rem;
-  filter: drop-shadow(2px 2px 0 var(--ink));
-  animation: drive 10s linear infinite;
-}
-.car-1 { animation-duration: 10s; animation-delay: 0s; }
-.car-2 { animation: driveRev 8s linear infinite; animation-delay: -3s; bottom: 38px; }
-.car-3 { animation-duration: 13s; animation-delay: -2s; }
-@keyframes drive    { 0% { left: -80px; } 100% { left: calc(100% + 40px); } }
-@keyframes driveRev { 0% { left: calc(100% + 40px); transform: scaleX(-1); } 100% { left: -80px; transform: scaleX(-1); } }
-
-/* -------- Header -------- */
+/* -------- Header overrides -------- */
 header {
-  position: relative;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
   padding: 0.85rem 1.25rem;
-  background: rgba(255,255,255,0.9);
-  border-bottom: 4px solid var(--ink);
-  box-shadow: 0 4px 0 var(--ink);
 }
 .brand {
   font-size: clamp(1.25rem, 3.5vw, 2rem);
@@ -191,23 +44,6 @@ header {
   text-shadow: 2px 2px 0 var(--sun);
   white-space: nowrap;
 }
-.lang-toggle {
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 900;
-  padding: 0.35rem 0.9rem;
-  background: var(--ink);
-  color: #fff;
-  border: 3px solid var(--ink);
-  border-radius: 20px;
-  cursor: pointer;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
-  letter-spacing: 0.05em;
-  transition: background 0.15s;
-}
-.lang-toggle:hover { background: var(--ink-soft); }
-.lang-toggle:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
-.lang-toggle:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 
 /* -------- Main -------- */
 main {
@@ -352,7 +188,6 @@ main {
 .play-btn:active { transform: translate(2px, 2px);   box-shadow: 2px 2px 0 var(--ink); }
 .play-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
 
-/* "Coming soon" placeholder (for cards listed without a built game yet) */
 .game-card.coming-soon { opacity: 0.55; filter: saturate(0.8); }
 .game-card.coming-soon .play-btn {
   background: var(--ink-soft);
@@ -436,7 +271,7 @@ main {
              data-en="Play ▶" data-tr="Oyna ▶">Oyna ▶</a>
         </article>
 
-      <article class="game-card color-b6" data-grade="2" data-code="MAT.2.1.2">
+        <article class="game-card color-b6" data-grade="2" data-code="MAT.2.1.2">
           <div class="game-card-head">
             <span class="chip grade" data-en="Grade 2" data-tr="2. Sınıf">2. Sınıf</span>
             <span class="chip code">MAT.2.1.2</span>
@@ -463,6 +298,23 @@ main {
              Sayıları onluklara ve birliklere ayırmak için kartları sürükle, geri birleştir ve alışılmadık ayrıştırmalarla uğraş!
           </p>
           <a class="play-btn" href="games/robot-decomposer.html"
+             data-en="Play ▶" data-tr="Oyna ▶">Oyna ▶</a>
+        </article>
+
+        <article class="game-card color-b3" data-grade="2" data-code="MAT.2.1.3">
+          <div class="game-card-head">
+            <span class="chip grade" data-en="Grade 2" data-tr="2. Sınıf">2. Sınıf</span>
+            <span class="chip code">MAT.2.1.3</span>
+          </div>
+          <h3 class="game-title"
+              data-en="🐸 Number Line River"
+              data-tr="🐸 Sayı Doğrusu Nehri">🐸 Sayı Doğrusu Nehri</h3>
+          <p class="summary"
+             data-en="Hop along stepping stones to place, order, and round numbers on the 0–100 river."
+             data-tr="Taş taş zıplayarak 0–100 nehrinde sayıları yerleştir, sırala ve en yakın onluğa yuvarla.">
+             Taş taş zıplayarak 0–100 nehrinde sayıları yerleştir, sırala ve en yakın onluğa yuvarla.
+          </p>
+          <a class="play-btn" href="games/number-line-river.html"
              data-en="Play ▶" data-tr="Oyna ▶">Oyna ▶</a>
         </article>
 
@@ -504,10 +356,6 @@ main {
   applyLang();
 
   /* ---------- Apply per-game enable/disable from /config.json ---------- */
-  /* Default: every card is enabled. A game is greyed-out and made
-     non-interactive only when its slug is explicitly listed in
-     config.games with enabled === false. Card stays visible so kids
-     can see what's there but can't open it. */
   fetch('./config.json', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : null)
     .then(cfg => {

@@ -6,7 +6,54 @@ alwaysApply: false
 
 # Math Game Conventions
 
-Every game lives at `games/<game-slug>.html` and is a **single self-contained HTML file** with embedded `<style>` and `<script>`. No external libraries, fonts, build tools, or network requests. The only allowed local assets are the reward images in `images/`.
+Every game lives at `games/<game-slug>.html`. Each game must link the two shared files **before** any local `<style>` or `<script>`:
+
+```html
+<link rel="stylesheet" href="../shared/mf-design.css">
+<style>/* only this game's scene + custom widgets */</style>
+...
+<script src="../shared/mf-core.js"></script>
+<script>/* STRINGS + generators + main(), all using MF.* helpers */</script>
+```
+
+No other external libraries, fonts, or build tools. The only allowed local assets are the reward images in `images/`.
+
+## MF.* shared helper API
+
+`window.MF` is exposed by `shared/mf-core.js`. Destructure what you need at the top of each game's script:
+
+```js
+const { rand, pick, shuffle, makeDistractors,
+        turkishWord, renderBlocks,
+        loadRewards, chooseReward, mountReward,
+        spawnConfetti, trapFocus, releaseFocus,
+        createI18n } = MF;
+```
+
+| Helper | Signature | Purpose |
+|---|---|---|
+| `rand(a, b)` | `(number, number) → number` | Random integer in [a, b] |
+| `pick(arr)` | `(T[]) → T` | Random element |
+| `shuffle(arr)` | `(T[]) → T[]` | Shuffled copy |
+| `makeDistractors(answer, count, opts?)` | `opts: {min?, max?}` | Pedagogical distractors for MC questions |
+| `turkishWord(n)` | `(0..100) → string` | Turkish number word |
+| `renderBlocks(n)` | `(number) → string` | HTML for base-10 block display |
+| `loadRewards(defaults?, url?)` | `async` | Fetch `../config.json`; returns `{ list }` store |
+| `chooseReward(list)` | `(list) → reward` | Weighted random selection |
+| `mountReward(wrapEl, reward, missingLabel)` | — | Preload image, attach or show fallback |
+| `spawnConfetti(layerEl, colors?)` | — | Fill confetti layer with 60 pieces |
+| `trapFocus(modal)` / `releaseFocus(modal)` | — | Keyboard focus trap for reward modal |
+| `createI18n(strings, storageKey?)` | — | I18n factory (optional; most games keep their own `STRINGS`) |
+
+**Standard reward loading pattern** (replaces the old manual `REWARDS` array + `fetch`):
+
+```js
+const rewardStore = MF.loadRewards();   // kicks off config.json fetch; list auto-updates
+// ...
+const reward = MF.chooseReward(rewardStore.list);
+MF.mountReward($rewardImageWrap, reward, S('rewardMissing'));
+MF.spawnConfetti($confettiLayer);
+```
 
 ## Bilingual (EN + TR) is mandatory
 
@@ -46,29 +93,11 @@ const FEEDBACK_DELAY  = 1100;
 
 When `progress >= TARGET_PROGRESS`:
 1. Show modal with `popIn` animation, confetti layer, focus-trapped, ESC closes/restarts.
-2. Pick one reward via **weighted random**:
-
-```js
-const REWARDS = [
-  { src: '../images/1tl.jpg',  weight: 10, label: '1 TL'  },
-  { src: '../images/5tl.jpg',  weight: 50, label: '5 TL'  },
-  { src: '../images/10tl.jpg', weight: 20, label: '10 TL' },
-  { src: '../images/20tl.jpg', weight: 20, label: '20 TL' },
-];
-```
-
-3. **Path is `../images/<file>.jpg`, NOT `images/<file>.jpg`.** Games live in `games/`, so a bare `images/...` resolves to `games/images/...` in the browser, which doesn't exist. See "Lessons learned" below.
-4. **Preload then attach** the `<img>` — only append it to the DOM in `onload`, so a missing reward image shows the emoji fallback alone (no broken-image glyph). Pattern:
-
-```js
-const img = new Image();
-img.alt = reward.label;
-img.onload  = () => { $wrap.innerHTML = ''; $wrap.appendChild(img); };
-img.onerror = () => { $wrap.innerHTML = '<div class="fallback">🪙<br>' + reward.label + '<br><span>' + S('rewardMissing') + '</span></div>'; };
-img.src = reward.src;   // last — triggers loading
-```
-
-5. On image error show a friendly emoji fallback with the label and the localized "missing image" string.
+2. Use `MF.loadRewards()` + `MF.chooseReward()` + `MF.mountReward()` (see MF.* API above).
+   - Default fallback list: `1tl.jpg (w:10)`, `5tl.jpg (w:50)`, `10tl.jpg (w:20)`, `20tl.jpg (w:20)`.
+3. **Path is `../images/<file>.jpg`, NOT `images/<file>.jpg`.** Games live in `games/`, so a bare `images/...` resolves to `games/images/...` in the browser. `MF.loadRewards()` normalizes paths automatically.
+4. **`MF.mountReward` preloads then attaches** the `<img>` — only appends to the DOM in `onload`, so a missing image shows the emoji fallback alone (no broken-image glyph).
+5. On image error a friendly emoji fallback with the label and the localized "missing image" string is shown.
 6. "Play Again" button (bilingual) resets progress to 0 and starts a new loop.
 
 > **Reward filenames on disk:** `1tl.jpg`, `5tl.jpg`, `10tl.jpg`, `20tl.jpg` (and an unused `5tltl.jpg`). Always use `../images/5tl.jpg` (not `5tlt.jpg`, not `5tltl.jpg`).
@@ -82,14 +111,13 @@ img.src = reward.src;   // last — triggers loading
 
 ## File header
 
-Start every game's `<style>` block with a banner like:
+Start every game's local `<style>` block with a banner like:
 
 ```css
 /* =============================================================
    <GAME NAME EN> / <GAME NAME TR> — Grade <N> Math Game
    Target concept: <plain-English concept summary>
    Curriculum: MAT.<x>.<y>.<z>
-   Single-file, no external libraries.
    ============================================================= */
 ```
 

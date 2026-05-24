@@ -6,8 +6,9 @@
     { "src": "images/20tl.jpg", "weight": 20, "label": "20 TL" }
   ],
   "games": {
-    "number_city":      { "enabled": true },
-    "base-ten-builder": { "enabled": true },
-    "robot-decomposer": { "enabled": true }
+    "number_city":      { "enabled": false },
+    "base-ten-builder": { "enabled": false },
+    "robot-decomposer": { "enabled": true },
+    "number-line-river": { "enabled": true }
   }
 }

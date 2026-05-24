@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>Sayı Doğrusu Nehri — 2. Sınıf Matematik</title>
+<link rel="stylesheet" href="../shared/mf-design.css">
+<style>
+/* =========================================================================
+   NUMBER LINE RIVER — game-specific styles only
+   Target: MAT.2.1.3  Number order, number line placement, nearest ten
+   ========================================================================= */
+
+/* -------- River-specific tokens -------- */
+:root {
+  --river-light: #5bbcdb;
+  --river-mid:   #2e8cb5;
+  --river-deep:  #1c5d80;
+  --grass-top:   #8fd25c;
+  --grass-edge:  #4a8a2c;
+  --grass-dark:  #5fa84a;
+  --stone:       #d4a76a;
+  --stone-edge:  #6b4423;
+  --stone-shade: #b88450;
+  --pebble:      #c6c6b8;
+  --pebble-edge: #6a6a5a;
+  --accent-pink:   #ff7eb6;
+  --accent-cyan:   #44d6e6;
+  --accent-purple: #9b5cff;
+}
+
+/* -------- Ambient container -------- */
+.sky-decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* -------- Header overrides -------- */
+.title {
+  text-shadow: 2px 2px 0 var(--river-light);
+}
+.progress-wrap { max-width: 240px; }
+
+/* -------- Difficulty badge color overrides -------- */
+.difficulty-badge.medium { background: var(--accent-cyan); }
+.difficulty-badge.hard   { background: var(--accent-pink); color: var(--ink); }
+
+/* -------- Hint button -------- */
+.hint-btn {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 0.4rem 0.7rem;
+  background: var(--sun);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.hint-btn:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--ink); }
+.hint-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.hint-btn.active { background: var(--good); color: #fff; }
+
+/* -------- Main game area -------- */
+main {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 1rem 0.75rem;
+  overflow-y: auto;
+}
+
+/* -------- Prompt card -------- */
+.prompt-card {
+  background: rgba(255,255,255,0.96);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  padding: 0.6rem 1.25rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  width: min(820px, 95vw);
+  text-align: center;
+}
+.instruction {
+  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 0.1rem;
+}
+.target-display {
+  font-size: clamp(1.4rem, 4.5vw, 2.2rem);
+  font-weight: 900;
+  color: var(--warm);
+  text-shadow: 3px 3px 0 var(--ink);
+  line-height: 1.1;
+}
+
+/* -------- River container & number line -------- */
+.river-container {
+  position: relative;
+  width: min(820px, 95vw);
+  height: 170px;
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 5px 5px 0 var(--ink);
+  background: linear-gradient(180deg,
+    var(--grass-top) 0%,    var(--grass-top) 18%,
+    var(--river-light) 18%, var(--river-mid) 50%,
+    var(--river-deep) 82%, var(--grass-top) 82%,
+    var(--grass-top) 100%
+  );
+}
+.river-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 18%;
+  background:
+    radial-gradient(ellipse at 10% 100%, var(--grass-dark) 3px, transparent 4px),
+    radial-gradient(ellipse at 30% 80%,  var(--grass-dark) 2px, transparent 3px),
+    radial-gradient(ellipse at 55% 95%,  var(--grass-dark) 3px, transparent 4px),
+    radial-gradient(ellipse at 78% 85%,  var(--grass-dark) 2px, transparent 3px);
+  background-size: 80px 100%;
+  z-index: 1;
+}
+.waves {
+  position: absolute;
+  top: 18%; left: 0; right: 0;
+  height: 64%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.4;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 30px,
+    rgba(255,255,255,0.4) 30px 33px,
+    transparent 33px 60px
+  );
+  animation: waveMove 4s linear infinite;
+}
+@keyframes waveMove {
+  0%   { background-position: 0 0; }
+  100% { background-position: 60px 0; }
+}
+.lily {
+  position: absolute;
+  width: 24px; height: 16px;
+  background: var(--grass-dark);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  z-index: 2;
+  opacity: 0.65;
+}
+.lily::after {
+  content: "";
+  position: absolute;
+  top: -2px; left: 50%;
+  width: 1px; height: 4px;
+  background: var(--ink);
+  transform: translateX(-50%);
+}
+.lily-1 { top: 28%; left: 12%; animation: bob 5s ease-in-out infinite; }
+.lily-2 { top: 65%; left: 40%; animation: bob 6s ease-in-out infinite; animation-delay: -2s; }
+.lily-3 { top: 35%; left: 78%; animation: bob 7s ease-in-out infinite; animation-delay: -4s; }
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+.number-line {
+  position: absolute;
+  top: 50%; left: 5%; right: 5%;
+  height: 6px;
+  background: var(--ink);
+  border-radius: 3px;
+  transform: translateY(-50%);
+  z-index: 3;
+}
+
+/* Stones / pebbles / markers */
+.stone {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px; height: 36px;
+  background: radial-gradient(ellipse at 30% 30%, var(--stone) 40%, var(--stone-shade) 100%);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.95rem;
+  color: var(--ink);
+  box-shadow: 0 4px 0 var(--stone-edge);
+  cursor: default;
+  transition: transform 0.2s ease;
+}
+.stone.small {
+  width: 18px; height: 14px;
+  background: radial-gradient(ellipse at 30% 30%, var(--pebble) 40%, #a8a89a 100%);
+  border-width: 2px;
+  font-size: 0.6rem;
+  color: transparent;
+  box-shadow: 0 2px 0 var(--pebble-edge);
+}
+.stone.small.show-label { color: var(--ink); }
+.stone.highlight {
+  animation: stonePulse 1.2s ease-in-out infinite;
+  background: radial-gradient(ellipse at 30% 30%, var(--sun) 40%, var(--warm) 100%);
+  border-color: var(--warm);
+  z-index: 6;
+}
+@keyframes stonePulse {
+  0%, 100% { transform: translate(-50%,-50%) scale(1);    box-shadow: 0 4px 0 var(--stone-edge), 0 0 0 rgba(255,210,63,0.6); }
+  50%      { transform: translate(-50%,-50%) scale(1.15); box-shadow: 0 4px 0 var(--stone-edge), 0 0 20px rgba(255,210,63,0.8); }
+}
+.stone.correct-marker {
+  background: radial-gradient(ellipse at 30% 30%, #6ddc6d 40%, var(--good) 100%);
+  border-color: var(--good);
+  animation: stonePop 0.5s cubic-bezier(.34,1.56,.64,1);
+  z-index: 7;
+}
+.stone.user-marker {
+  background: radial-gradient(ellipse at 30% 30%, #ff8c8c 40%, var(--bad) 100%);
+  border-color: var(--bad);
+  animation: stonePop 0.5s cubic-bezier(.34,1.56,.64,1);
+  z-index: 7;
+}
+@keyframes stonePop {
+  0%   { transform: translate(-50%,-50%) scale(0); }
+  60%  { transform: translate(-50%,-50%) scale(1.3); }
+  100% { transform: translate(-50%,-50%) scale(1); }
+}
+.stone-label {
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+.distance-line {
+  position: absolute;
+  top: 50%;
+  height: 0;
+  border-top: 3px dashed var(--bad);
+  z-index: 5;
+  animation: dashDraw 0.4s ease forwards;
+  pointer-events: none;
+}
+@keyframes dashDraw { 0% { opacity: 0; } 100% { opacity: 1; } }
+.drop-overlay {
+  position: absolute;
+  top: 18%; left: 5%; right: 5%;
+  height: 64%;
+  border: 3px dashed transparent;
+  border-radius: 12px;
+  z-index: 8;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  pointer-events: none;
+}
+.drop-overlay.active {
+  border-color: var(--sun);
+  background: rgba(255,210,63,0.15);
+}
+.frog {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -85%);
+  width: 36px; height: 36px;
+  z-index: 8;
+  filter: drop-shadow(2px 2px 0 var(--ink));
+  transition: left 0.6s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+}
+.frog.hop { animation: frogHop 0.6s cubic-bezier(.34,1.56,.64,1); }
+@keyframes frogHop {
+  0%   { transform: translate(-50%, -85%); }
+  50%  { transform: translate(-50%, -180%) rotate(-15deg); }
+  100% { transform: translate(-50%, -85%); }
+}
+
+/* -------- Card zone / draggable cards -------- */
+.card-zone {
+  width: min(820px, 95vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.card-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  min-height: 66px;
+}
+.card-pool {
+  background: rgba(255,255,255,0.85);
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  padding: 0.55rem;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.pool-label {
+  width: 100%;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 0.15rem;
+}
+.num-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px; height: 54px;
+  padding: 0 0.65rem;
+  font-size: clamp(1.1rem, 3.2vw, 1.5rem);
+  font-weight: 900;
+  color: var(--ink);
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: grab;
+  touch-action: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+.num-card:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.num-card:focus-visible { outline: 3px solid var(--accent-cyan); outline-offset: 2px; }
+.num-card.dragging { cursor: grabbing; opacity: 0.3; pointer-events: none; }
+.num-card.placed   { opacity: 0.4; } /* keep interactive so user can drag to swap */
+.num-card.used     { display: none; }
+.num-card.target {
+  font-size: clamp(1.5rem, 4.5vw, 2rem);
+  background: var(--warm);
+  color: #fff;
+  text-shadow: 2px 2px 0 var(--ink);
+  border-width: 5px;
+  cursor: grab;
+}
+.drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.9;
+  transform: translate(-50%, -50%) rotate(-3deg);
+  box-shadow: 0 0 24px var(--accent-pink), 4px 4px 0 var(--ink);
+}
+.order-slots {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0.45rem;
+  background: rgba(255,255,255,0.92);
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.order-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px; height: 54px;
+  padding: 0 0.5rem;
+  background: rgba(255,210,63,0.2);
+  border: 4px dashed var(--ink);
+  border-radius: 10px;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.order-slot::before {
+  content: attr(data-label);
+  position: absolute;
+  top: -12px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  font-weight: 900;
+  background: var(--ink);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.order-slot.target { background: rgba(255,210,63,0.5); border-color: var(--sun); transform: scale(1.05); }
+.order-slot.filled { background: var(--sun); border-style: solid; color: var(--ink); }
+.order-slot.correct-flash { background: var(--good) !important; color: #fff; animation: correctPulse 0.6s ease; }
+.order-slot.wrong-flash   { background: var(--bad)  !important; color: #fff; animation: wrongShake  0.5s ease; }
+
+/* -------- Multiple-choice row -------- */
+.mc-row {
+  width: min(820px, 95vw);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.mc-btn {
+  flex: 1 1 110px;
+  max-width: 200px;
+  min-height: 68px;
+  font-family: inherit;
+  font-size: clamp(1.1rem, 3.2vw, 1.6rem);
+  font-weight: 900;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  padding: 0.5rem 0.7rem;
+  line-height: 1.1;
+}
+.mc-btn:nth-child(1) { background: var(--accent-cyan); }
+.mc-btn:nth-child(2) { background: var(--sun); }
+.mc-btn:nth-child(3) { background: var(--accent-pink); color: var(--ink); }
+.mc-btn:nth-child(4) { background: var(--accent-purple); color: #fff; text-shadow: 1px 1px 0 var(--ink); }
+.mc-btn:hover  { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--ink); }
+.mc-btn:active { transform: translate(2px,2px);   box-shadow: 2px 2px 0 var(--ink); }
+.mc-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.mc-btn.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; color: #fff; }
+.mc-btn.wrong-flash   { animation: wrongShake  0.5s ease; background: var(--bad)  !important; color: #fff; }
+
+/* -------- Action row -------- */
+.action-row {
+  width: min(820px, 95vw);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.action-btn {
+  font-family: inherit;
+  font-weight: 900;
+  font-size: clamp(0.9rem, 2.2vw, 1.05rem);
+  padding: 0.55rem 1.2rem;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.action-btn.check { background: var(--good); color: #fff; flex: 2; min-width: 110px; }
+.action-btn.clear { background: #fff; color: var(--ink); flex: 1; min-width: 90px; }
+.action-btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--ink); }
+.action-btn:focus-visible { outline: 3px solid var(--accent-cyan); outline-offset: 2px; }
+.action-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* -------- Feedback extras -------- */
+.feedback-wrap {
+  width: min(820px, 95vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+.distance-readout {
+  display: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  padding: 0.2rem 0.55rem;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.distance-readout.show { display: inline-block; animation: bounceIn 0.4s ease; }
+.distance-readout .you  { color: var(--bad);  font-weight: 900; }
+.distance-readout .corr { color: var(--good); font-weight: 900; }
+.distance-readout .off  { color: var(--warm); font-weight: 900; }
+
+/* -------- Reward card h2 river override -------- */
+.reward-card h2 { color: var(--river-mid); }
+
+/* -------- Riverbank ground strip -------- */
+.riverbank {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  height: 58px;
+  background: var(--grass-top);
+  border-top: 4px solid var(--ink);
+  overflow: hidden;
+}
+.riverbank::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 4px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(
+    to right,
+    var(--grass-dark) 0 28px,
+    transparent 28px 56px
+  );
+  animation: grassStripe 2s linear infinite;
+}
+@keyframes grassStripe { to { background-position: -56px 0; } }
+.boat {
+  position: absolute;
+  bottom: 4px;
+  font-size: 2rem;
+  filter: drop-shadow(2px 2px 0 var(--ink));
+}
+.boat-1 { animation: boatDrive 12s linear infinite; }
+.boat-2 { animation: boatRev   10s linear infinite; animation-delay: -4s; bottom: 26px; font-size: 1.5rem; }
+.boat-3 { animation: boatDrive 16s linear infinite; animation-delay: -8s; font-size: 1.3rem; }
+@keyframes boatDrive { 0% { left: -60px; } 100% { left: calc(100% + 40px); } }
+@keyframes boatRev   { 0% { left: calc(100% + 40px); transform: scaleX(-1); } 100% { left: -60px; transform: scaleX(-1); } }
+
+/* -------- Mobile tweaks -------- */
+@media (max-width: 560px) {
+  header { padding: 0.4rem 0.65rem; gap: 0.4rem; }
+  .title { font-size: 0.85rem; }
+  .progress-wrap { max-width: 130px; }
+  main { padding: 0.4rem 0.5rem 0.5rem; gap: 0.35rem; }
+  .river-container { height: 140px; }
+  .stone { width: 32px; height: 26px; font-size: 0.7rem; }
+  .stone.small { width: 13px; height: 10px; }
+  .stone-label { font-size: 0.6rem; padding: 0 2px; }
+  .frog { width: 26px; height: 26px; }
+  .sun { width: 48px; height: 48px; top: 60px; }
+  .num-card { min-width: 50px; height: 44px; font-size: 1rem; padding: 0 0.4rem; }
+  .order-slot { min-width: 50px; height: 44px; }
+  .lang-toggle { font-size: 0.75rem; padding: 0.25rem 0.6rem; }
+  .hint-btn { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
+  .riverbank { height: 46px; }
+  .skyline { bottom: 46px; height: 100px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Ambient background -->
+  <div class="sky-decor" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="skyline">
+      <div class="b"></div><div class="b"></div><div class="b"></div>
+      <div class="b"></div><div class="b"></div><div class="b"></div>
+      <div class="b"></div><div class="b"></div><div class="b"></div>
+      <div class="b"></div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="title" id="titleEl">
+      <span id="titleText">🐸 Sayı Doğrusu Nehri</span>
+      <span class="difficulty-badge" id="difficultyBadge">Kolay</span>
+    </div>
+    <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="10"
+         aria-valuenow="0" aria-label="İlerleme" id="progressBar">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">0 / 10</div>
+    </div>
+    <div class="header-end">
+      <button class="hint-btn" id="hintBtn" type="button" aria-pressed="false">💡 İpucu</button>
+      <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
+    </div>
+  </header>
+
+  <!-- Main game area -->
+  <main>
+
+    <!-- Prompt -->
+    <section class="prompt-card">
+      <div class="instruction" id="instruction"></div>
+      <div class="target-display" id="targetDisplay"></div>
+    </section>
+
+    <!-- River with number line -->
+    <section class="river-container" id="riverContainer">
+      <div class="waves" aria-hidden="true"></div>
+      <div class="lily lily-1" aria-hidden="true"></div>
+      <div class="lily lily-2" aria-hidden="true"></div>
+      <div class="lily lily-3" aria-hidden="true"></div>
+      <div class="number-line"></div>
+      <div class="drop-overlay" id="dropOverlay"></div>
+      <div id="stonesContainer"></div>
+      <svg class="frog" id="frog" viewBox="0 0 60 60" aria-hidden="true" style="left:5%;">
+        <ellipse cx="14" cy="42" rx="7" ry="5" fill="#6fbf3f" stroke="#1f1d2c" stroke-width="2"/>
+        <ellipse cx="46" cy="42" rx="7" ry="5" fill="#6fbf3f" stroke="#1f1d2c" stroke-width="2"/>
+        <ellipse cx="30" cy="38" rx="18" ry="14" fill="#7fd14f" stroke="#1f1d2c" stroke-width="3"/>
+        <ellipse cx="30" cy="42" rx="10" ry="6" fill="#e8f7d8"/>
+        <ellipse cx="30" cy="26" rx="14" ry="11" fill="#7fd14f" stroke="#1f1d2c" stroke-width="3"/>
+        <circle cx="22" cy="20" r="5" fill="#7fd14f" stroke="#1f1d2c" stroke-width="2"/>
+        <circle cx="38" cy="20" r="5" fill="#7fd14f" stroke="#1f1d2c" stroke-width="2"/>
+        <circle cx="22" cy="20" r="2.5" fill="#1f1d2c"/>
+        <circle cx="38" cy="20" r="2.5" fill="#1f1d2c"/>
+        <path d="M 22 30 Q 30 34 38 30" fill="none" stroke="#1f1d2c" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="18" cy="30" r="1.5" fill="#ff7eb6" opacity="0.7"/>
+        <circle cx="42" cy="30" r="1.5" fill="#ff7eb6" opacity="0.7"/>
+      </svg>
+    </section>
+
+    <!-- Card pool (drag mode) -->
+    <div class="card-zone" id="cardZone" hidden>
+      <div class="card-pool" id="cardPool">
+        <div class="pool-label" id="poolLabel"></div>
+        <div class="card-row" id="cardRow"></div>
+      </div>
+      <div class="order-slots" id="orderSlots" hidden></div>
+    </div>
+
+    <!-- Multiple-choice row -->
+    <div class="mc-row" id="mcRow" hidden></div>
+
+    <!-- Action row -->
+    <div class="action-row" id="actionRow" hidden>
+      <button class="action-btn clear" id="clearBtn" type="button"></button>
+      <button class="action-btn check" id="checkBtn" type="button"></button>
+    </div>
+
+    <!-- Feedback -->
+    <div class="feedback-wrap">
+      <div class="feedback" id="feedback" aria-live="polite"></div>
+      <div class="distance-readout" id="distanceReadout"></div>
+    </div>
+
+  </main>
+
+  <!-- Riverbank ground strip with moving critters -->
+  <div class="riverbank" aria-hidden="true">
+    <div class="boat boat-1">🚣</div>
+    <div class="boat boat-2">🐟</div>
+    <div class="boat boat-3">🦆</div>
+  </div>
+
+  <!-- Reward modal -->
+  <div class="reward-modal" id="rewardModal" hidden
+       role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <div class="reward-card">
+      <h2 id="rewardTitle">🐸 Nehri geçtin! 🎉</h2>
+      <div class="reward-image-wrap" id="rewardImageWrap"></div>
+      <p class="reward-msg" id="rewardMsgEl">Harika sayı doğrusu becerisi, nehir kâşifi!</p>
+      <button class="play-again" id="playAgainBtn" type="button">Tekrar Oyna</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="../shared/mf-core.js"></script>
+<script>
+/* =========================================================================
+   NUMBER LINE RIVER — game logic
+   ========================================================================= */
+(() => {
+  'use strict';
+
+  /* ---------- MF helpers aliased locally ---------- */
+  const { rand, pick, shuffle, spawnConfetti, loadRewards, chooseReward, mountReward } = MF;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  /* ---------- Config ---------- */
+  const TARGET_PROGRESS = 10;
+  const INCREMENT_RIGHT = 1;
+  const DECREMENT_WRONG = 0;
+  const FEEDBACK_DELAY  = 1300;
+
+  const PLACE_TOLERANCE_NORMAL   = 2;
+  const PLACE_TOLERANCE_ESTIMATE = 5;
+  const DIFFICULTY = { medium: 3, hard: 6 };
+
+  /* ---------- i18n ---------- */
+  const STRINGS = {
+    en: {
+      title:            '🐸 Number Line River',
+      difficultyEasy:   'Easy',
+      difficultyMedium: 'Medium',
+      difficultyHard:   'Hard',
+      hint:             '💡 Hint',
+      check:            '✓ Check',
+      clear:            '🧹 Clear',
+      slotSmallest:     'Smallest',
+      slot2nd:          '2nd',
+      slot3rd:          '3rd',
+      slotLargest:      'Largest',
+      promptPlace:      'Drag the number to its spot on the river!',
+      promptEstimate:   '🔥 Estimate! Drag the number — no tick marks!',
+      promptOrder:      'Order the cards from smallest to largest!',
+      promptNearestTen: (n) => `Which TEN is ${n} closest to?`,
+      promptHalfway:    (n) => `🔥 Tricky! ${n} is exactly halfway. Round UP!`,
+      promptBetween:    (n) => `${n} is between which two TENS?`,
+      poolDragRiver:    'Drag the number onto the river!',
+      poolDragEstimate: '🔥 Drag onto the river — your best estimate!',
+      poolDragOrder:    'Drag the cards into the slots — smallest to largest!',
+      fillAllSlots:     '🐸 Fill all the slots first!',
+      distanceReadout: (you, corr, off) =>
+        `You: <span class="you">${you}</span> · Correct: <span class="corr">${corr}</span> · Off by <span class="off">${off}</span>`,
+      hintNearestTen: (n, l, u) =>
+        `${n} is ${Math.abs(n - l)} away from ${l} and ${Math.abs(n - u)} away from ${u}.`,
+      hintHalfway:    (n, u) => `Numbers ending in 5 round UP. So ${n} → ${u}.`,
+      hintBetween:    (n)    => `Look at the tens digit of ${n} → it tells you the lower ten.`,
+      praises: {
+        place:      ['🐸 Spot on!', '⭐ Bullseye!', '✨ Perfect placement!'],
+        estimate:   ['🐸 Amazing eye! 🔥', '⭐ Incredible estimate!', '✨ Number-line master!'],
+        order:      ['🐸 Order is right!', '⭐ Smallest to largest — perfect!', '✨ Great sorting!'],
+        nearestTen: ['🐸 Closest ten — correct!', '⭐ Great rounding!', '✨ You got it!'],
+        halfway:    ['🐸 Tricky one — solved! 🔥', '⭐ Round UP — nailed it!', '✨ Halfway hero!'],
+        between:    ['🐸 Between the right tens!', '⭐ Great place-value thinking!', '✨ Correct range!'],
+      },
+      wrongPlace:    (off, t) => `🐸 Off by ${off}. Target was ${t}. Try next round!`,
+      wrongEstimate: (off, t) => off <= 10
+        ? `🐸 Close! Off by ${off}. Target was ${t}.`
+        : `🐸 Off by ${off}. Target was ${t}.`,
+      wrongHalfway:  (c)      => `🐸 Numbers ending in 5 round UP! Answer was ${c}.`,
+      wrongOrder:    (s)      => `🐸 Correct order was: ${s}.`,
+      wrongGeneric:  (a)      => `🐸 The answer was ${a}.`,
+      rewardTitle:   '🐸 You crossed the river! 🎉',
+      rewardMsg:     'Amazing number-line skills, river explorer!',
+      playAgain:     'Play Again',
+      rewardMissing: '(reward image missing)',
+      progressLabel: 'Progress',
+      langToggle:    'TR',
+    },
+    tr: {
+      title:            '🐸 Sayı Doğrusu Nehri',
+      difficultyEasy:   'Kolay',
+      difficultyMedium: 'Orta',
+      difficultyHard:   'Zor',
+      hint:             '💡 İpucu',
+      check:            '✓ Kontrol',
+      clear:            '🧹 Temizle',
+      slotSmallest:     'En küçük',
+      slot2nd:          '2.',
+      slot3rd:          '3.',
+      slotLargest:      'En büyük',
+      promptPlace:      'Sayıyı nehirdeki yerine sürükle!',
+      promptEstimate:   '🔥 Tahmin et! Sayıyı sürükle — çizgi yok!',
+      promptOrder:      'Kartları küçükten büyüğe sırala!',
+      promptNearestTen: (n) => `${n} hangi ONLUĞA daha yakın?`,
+      promptHalfway:    (n) => `🔥 Hileli! ${n} tam ortada. YUKARI yuvarla!`,
+      promptBetween:    (n) => `${n} hangi iki ONLUK arasında?`,
+      poolDragRiver:    'Sayıyı nehire sürükle!',
+      poolDragEstimate: '🔥 Nehire sürükle — en iyi tahminin!',
+      poolDragOrder:    'Kartları yuvalara sürükle — küçükten büyüğe!',
+      fillAllSlots:     '🐸 Önce tüm yuvaları doldur!',
+      distanceReadout: (you, corr, off) =>
+        `Sen: <span class="you">${you}</span> · Doğru: <span class="corr">${corr}</span> · Fark: <span class="off">${off}</span>`,
+      hintNearestTen: (n, l, u) =>
+        `${n}, ${l}'a ${Math.abs(n - l)}, ${u}'a ${Math.abs(n - u)} uzakta.`,
+      hintHalfway:    (n, u) => `5 ile biten sayılar YUKARI yuvarlanır. ${n} → ${u}.`,
+      hintBetween:    (n)    => `${n} sayısının onlar basamağına bak — alt onluğu söyler.`,
+      praises: {
+        place:      ['🐸 Tam isabet!', '⭐ Mükemmel!', '✨ Harika yerleşim!'],
+        estimate:   ['🐸 İnanılmaz göz! 🔥', '⭐ Muhteşem tahmin!', '✨ Sayı doğrusu ustası!'],
+        order:      ['🐸 Sıralama doğru!', '⭐ Küçükten büyüğe — mükemmel!', '✨ Harika sıralama!'],
+        nearestTen: ['🐸 En yakın onluk — doğru!', '⭐ Harika yuvarlama!', '✨ Buldum!'],
+        halfway:    ['🐸 Zor soru — çözdün! 🔥', '⭐ YUKARI yuvarla — anladın!', '✨ Yarım yol kahramanı!'],
+        between:    ['🐸 Doğru onluklar arası!', '⭐ Harika basamak değeri!', '✨ Doğru aralık!'],
+      },
+      wrongPlace:    (off, t) => `🐸 ${off} fark var. Hedef ${t} idi. Bir sonraki turda dene!`,
+      wrongEstimate: (off, t) => off <= 10
+        ? `🐸 Çok yakın! ${off} fark. Hedef ${t} idi.`
+        : `🐸 ${off} fark var. Hedef ${t} idi.`,
+      wrongHalfway:  (c)      => `🐸 5 ile biten sayılar YUKARI yuvarlanır! Cevap ${c} idi.`,
+      wrongOrder:    (s)      => `🐸 Doğru sıra şuydu: ${s}.`,
+      wrongGeneric:  (a)      => `🐸 Cevap ${a} idi.`,
+      rewardTitle:   '🐸 Nehri geçtin! 🎉',
+      rewardMsg:     'Harika sayı doğrusu becerisi, nehir kâşifi!',
+      playAgain:     'Tekrar Oyna',
+      rewardMissing: '(ödül resmi eksik)',
+      progressLabel: 'İlerleme',
+      langToggle:    'EN',
+    },
+  };
+
+  let lang = localStorage.getItem('mf_lang') || 'tr';
+  const S = (key, ...args) => {
+    const val = STRINGS[lang][key];
+    return typeof val === 'function' ? val(...args) : val;
+  };
+
+  /* ---------- Rewards ---------- */
+  const rewardStore = loadRewards();
+
+  /* ---------- Helpers ---------- */
+  function localizeChoiceLabel(value) {
+    if (lang === 'tr' && typeof value === 'string' && value.includes(' and ')) {
+      return value.replace(' and ', ' ve ');
+    }
+    return String(value);
+  }
+
+  /* ---------- Question generators ---------- */
+  function genPlaceOnLine() {
+    const n = rand(1, 99);
+    return {
+      type: 'place',
+      target: n,
+      getPrompt:     () => S('promptPlace'),
+      getPoolLabel:  () => S('poolDragRiver'),
+      showAllStones: true,
+      smallPebbles:  true,
+      tolerance: PLACE_TOLERANCE_NORMAL,
+    };
+  }
+
+  function genEstimate() {
+    const n = rand(11, 89);
+    return {
+      type: 'estimate',
+      target: n,
+      getPrompt:     () => S('promptEstimate'),
+      getPoolLabel:  () => S('poolDragEstimate'),
+      showAllStones: false,
+      smallPebbles:  false,
+      tolerance: PLACE_TOLERANCE_ESTIMATE,
+    };
+  }
+
+  function genOrderCards() {
+    const set = new Set();
+    while (set.size < 4) set.add(rand(5, 95));
+    const sorted = [...set].sort((a, b) => a - b);
+    return {
+      type: 'order',
+      cards: shuffle(sorted),
+      correctOrder: sorted,
+      getPrompt:     () => S('promptOrder'),
+      getPoolLabel:  () => S('poolDragOrder'),
+      showAllStones: true,
+      smallPebbles:  false,
+    };
+  }
+
+  function genNearestTen(easy) {
+    let n;
+    if (easy) {
+      const tens = rand(1, 9), ones = pick([1, 2, 8, 9]);
+      n = tens * 10 + ones;
+    } else {
+      const tens = rand(1, 9), ones = pick([3, 4, 6, 7]);
+      n = tens * 10 + ones;
+    }
+    const lower = Math.floor(n / 10) * 10;
+    const upper = lower + 10;
+    const correct = (n % 10 < 5) ? lower : upper;
+    const distantTens = (correct === lower) ? (upper + 10) : (lower - 10);
+    const choices = [lower, upper];
+    if (distantTens >= 0 && distantTens <= 100) choices.push(distantTens);
+    return {
+      type: 'nearestTen',
+      target: n,
+      correct,
+      choices: shuffle(choices),
+      getPrompt:     () => S('promptNearestTen', n),
+      showAllStones: true,
+      highlightStone: n,
+      hint: () => S('hintNearestTen', n, lower, upper),
+    };
+  }
+
+  function genHalfwayTricky() {
+    const tens = rand(1, 9);
+    const n = tens * 10 + 5;
+    const lower = tens * 10;
+    const upper = lower + 10;
+    return {
+      type: 'halfway',
+      target: n,
+      correct: upper,
+      choices: shuffle([lower, upper]),
+      getPrompt:     () => S('promptHalfway', n),
+      showAllStones: true,
+      highlightStone: n,
+      hint: () => S('hintHalfway', n, upper),
+    };
+  }
+
+  function genBetweenTens() {
+    let n;
+    do { n = rand(11, 99); } while (n % 10 === 0);
+    const lower = Math.floor(n / 10) * 10;
+    const upper = lower + 10;
+    const correctLabel = `${lower} and ${upper}`;
+    const distractors = new Set();
+    if (lower >= 10) distractors.add(`${lower - 10} and ${lower}`);
+    if (upper <= 90) distractors.add(`${upper} and ${upper + 10}`);
+    const farLower = Math.max(0, lower - 20);
+    if (farLower !== lower) distractors.add(`${farLower} and ${farLower + 10}`);
+    const choices = [correctLabel, ...[...distractors].slice(0, 3)];
+    while (choices.length < 4) {
+      const t = rand(0, 9) * 10;
+      const lbl = `${t} and ${t + 10}`;
+      if (!choices.includes(lbl)) choices.push(lbl);
+    }
+    return {
+      type: 'between',
+      target: n,
+      correct: correctLabel,
+      choices: shuffle(choices),
+      getPrompt:     () => S('promptBetween', n),
+      showAllStones: true,
+      highlightStone: n,
+      hint: () => S('hintBetween', n),
+    };
+  }
+
+  function pickGenerator(progress) {
+    let pool;
+    if (progress < DIFFICULTY.medium) {
+      pool = [
+        { fn: () => genPlaceOnLine(),     weight: 45 },
+        { fn: () => genNearestTen(true),  weight: 55 },
+      ];
+    } else if (progress < DIFFICULTY.hard) {
+      pool = [
+        { fn: () => genPlaceOnLine(),     weight: 25 },
+        { fn: () => genOrderCards(),      weight: 25 },
+        { fn: () => genNearestTen(false), weight: 25 },
+        { fn: () => genBetweenTens(),     weight: 25 },
+      ];
+    } else {
+      pool = [
+        { fn: () => genPlaceOnLine(),     weight: 12 },
+        { fn: () => genOrderCards(),      weight: 18 },
+        { fn: () => genNearestTen(false), weight: 15 },
+        { fn: () => genBetweenTens(),     weight: 15 },
+        { fn: () => genEstimate(),        weight: 22 },
+        { fn: () => genHalfwayTricky(),   weight: 18 },
+      ];
+    }
+    const total = pool.reduce((s, g) => s + g.weight, 0);
+    let r = Math.random() * total;
+    for (const g of pool) { r -= g.weight; if (r <= 0) return g.fn; }
+    return pool[0].fn;
+  }
+
+  function difficultyLabel(progress) {
+    if (progress < DIFFICULTY.medium) return { text: S('difficultyEasy'),   cls: '' };
+    if (progress < DIFFICULTY.hard)   return { text: S('difficultyMedium'), cls: 'medium' };
+    return { text: S('difficultyHard'), cls: 'hard' };
+  }
+
+  /* ---------- Game state ---------- */
+  const state = {
+    progress: 0,
+    current: null,
+    locked: false,
+    hintOn: false,
+    dragGhost: null,
+    dragOriginCard: null,
+    orderSlotFills: {},
+    selectedCard: null,
+  };
+
+  /* ---------- DOM refs ---------- */
+  const $titleText       = document.getElementById('titleText');
+  const $difficultyBadge = document.getElementById('difficultyBadge');
+  const $langToggleBtn   = document.getElementById('langToggleBtn');
+  const $hintBtn         = document.getElementById('hintBtn');
+  const $progressBar     = document.getElementById('progressBar');
+  const $progressFill    = document.getElementById('progressFill');
+  const $progressText    = document.getElementById('progressText');
+  const $instruction     = document.getElementById('instruction');
+  const $targetDisplay   = document.getElementById('targetDisplay');
+  const $riverContainer  = document.getElementById('riverContainer');
+  const $stonesContainer = document.getElementById('stonesContainer');
+  const $dropOverlay     = document.getElementById('dropOverlay');
+  const $frog            = document.getElementById('frog');
+  const $cardZone        = document.getElementById('cardZone');
+  const $cardRow         = document.getElementById('cardRow');
+  const $poolLabel       = document.getElementById('poolLabel');
+  const $orderSlots      = document.getElementById('orderSlots');
+  const $mcRow           = document.getElementById('mcRow');
+  const $actionRow       = document.getElementById('actionRow');
+  const $checkBtn        = document.getElementById('checkBtn');
+  const $clearBtn        = document.getElementById('clearBtn');
+  const $feedback        = document.getElementById('feedback');
+  const $distanceReadout = document.getElementById('distanceReadout');
+  const $rewardModal     = document.getElementById('rewardModal');
+  const $rewardTitleEl   = document.getElementById('rewardTitle');
+  const $rewardMsgEl     = document.getElementById('rewardMsgEl');
+  const $rewardImageWrap = document.getElementById('rewardImageWrap');
+  const $confettiLayer   = document.getElementById('confettiLayer');
+  const $playAgainBtn    = document.getElementById('playAgainBtn');
+
+  /* ---------- Language ---------- */
+  function applyStaticStrings() {
+    document.documentElement.lang = lang;
+    document.title = S('title').replace(/^🐸\s*/, '') + ' — Grade 2 Math';
+    $titleText.textContent      = S('title');
+    $hintBtn.textContent        = S('hint');
+    $hintBtn.setAttribute('aria-label', S('hint'));
+    $checkBtn.textContent       = S('check');
+    $clearBtn.textContent       = S('clear');
+    $langToggleBtn.textContent  = S('langToggle');
+    $rewardTitleEl.textContent  = S('rewardTitle');
+    $rewardMsgEl.textContent    = S('rewardMsg');
+    $playAgainBtn.textContent   = S('playAgain');
+    $progressBar.setAttribute('aria-label', S('progressLabel'));
+    updateProgress();
+  }
+
+  function setLang(next) {
+    lang = next;
+    localStorage.setItem('mf_lang', lang);
+    applyStaticStrings();
+    if (state.current) renderQuestion(state.current);
+  }
+
+  /* ---------- Number-line math ---------- */
+  function valueToPercent(v) {
+    return 5 + (clamp(v, 0, 100) / 100) * 90;
+  }
+  function clientXToValue(clientX) {
+    const rect    = $riverContainer.getBoundingClientRect();
+    const padLeft = 0.05 * rect.width;
+    const usable  = 0.90 * rect.width;
+    const ratio   = (clientX - rect.left - padLeft) / usable;
+    return clamp(Math.round(ratio * 100), 0, 100);
+  }
+
+  /* ---------- Progress ---------- */
+  function updateProgress() {
+    const pct = (state.progress / TARGET_PROGRESS) * 100;
+    $progressFill.style.width = pct + '%';
+    $progressText.textContent = state.progress + ' / ' + TARGET_PROGRESS;
+    $progressBar.setAttribute('aria-valuenow', String(state.progress));
+    const diff = difficultyLabel(state.progress);
+    $difficultyBadge.textContent = diff.text;
+    $difficultyBadge.className   = 'difficulty-badge ' + diff.cls;
+  }
+
+  /* ---------- River render ---------- */
+  function renderStones(q) {
+    $stonesContainer.innerHTML = '';
+    if (q.showAllStones) {
+      for (let v = 0; v <= 100; v += 10) {
+        const s = document.createElement('div');
+        s.className = 'stone';
+        s.style.left = valueToPercent(v) + '%';
+        s.textContent = v;
+        if (q.highlightStone !== undefined && q.highlightStone === v) s.classList.add('highlight');
+        $stonesContainer.appendChild(s);
+      }
+      if (q.smallPebbles) {
+        for (let v = 5; v < 100; v += 10) {
+          const p = document.createElement('div');
+          p.className = 'stone small';
+          if (state.hintOn) p.classList.add('show-label');
+          p.style.left = valueToPercent(v) + '%';
+          p.textContent = v;
+          $stonesContainer.appendChild(p);
+        }
+      }
+      if (q.highlightStone !== undefined && q.highlightStone % 10 !== 0) {
+        const m = document.createElement('div');
+        m.className = 'stone highlight';
+        m.style.left = valueToPercent(q.highlightStone) + '%';
+        m.textContent = q.highlightStone;
+        m.style.width = '36px'; m.style.height = '30px'; m.style.fontSize = '0.8rem';
+        $stonesContainer.appendChild(m);
+      }
+    } else {
+      for (const v of [0, 100]) {
+        const s = document.createElement('div');
+        s.className = 'stone';
+        s.style.left = valueToPercent(v) + '%';
+        s.textContent = v;
+        $stonesContainer.appendChild(s);
+      }
+      if (state.hintOn) {
+        const mid = document.createElement('div');
+        mid.className = 'stone small show-label';
+        mid.style.left = valueToPercent(50) + '%';
+        mid.textContent = '50';
+        mid.style.width = '24px'; mid.style.height = '18px'; mid.style.fontSize = '0.7rem';
+        $stonesContainer.appendChild(mid);
+      }
+    }
+  }
+
+  function moveFrogTo(value, hop) {
+    $frog.style.left = valueToPercent(value) + '%';
+    if (hop) {
+      $frog.classList.remove('hop');
+      void $frog.offsetWidth;
+      $frog.classList.add('hop');
+    }
+  }
+
+  /* ---------- Mode renderers ---------- */
+  function renderQuestion(q) {
+    state.locked = false;
+    state.selectedCard = null;
+    state.orderSlotFills = {};
+    clearDragGhost();
+
+    $feedback.textContent  = '';
+    $feedback.className    = 'feedback';
+    $feedback.style.color  = '';
+    $feedback.style.fontStyle = '';
+    $distanceReadout.classList.remove('show');
+    $instruction.textContent  = q.getPrompt();
+    $targetDisplay.textContent = '';
+
+    $stonesContainer.innerHTML = '';
+    $cardRow.innerHTML    = '';
+    $orderSlots.innerHTML = '';
+    $mcRow.innerHTML      = '';
+    $cardZone.hidden    = true;
+    $orderSlots.hidden  = true;
+    $mcRow.hidden       = true;
+    $actionRow.hidden   = true;
+    $dropOverlay.classList.remove('active');
+
+    renderStones(q);
+
+    if (q.type === 'place' || q.type === 'estimate') {
+      $targetDisplay.textContent = q.target;
+      $cardZone.hidden   = false;
+      $poolLabel.textContent = q.getPoolLabel();
+      $cardRow.appendChild(createDraggableCard(q.target, true));
+      moveFrogTo(0, false);
+    }
+    else if (q.type === 'order') {
+      $targetDisplay.textContent = '? ? ? ?';
+      $cardZone.hidden   = false;
+      $orderSlots.hidden = false;
+      $poolLabel.textContent = q.getPoolLabel();
+      const slotLabels = [S('slotSmallest'), S('slot2nd'), S('slot3rd'), S('slotLargest')];
+      for (let i = 0; i < q.correctOrder.length; i++) {
+        const slot = document.createElement('div');
+        slot.className     = 'order-slot';
+        slot.dataset.label = slotLabels[i] || (i + 1) + '.';
+        slot.dataset.idx   = String(i);
+        slot.addEventListener('click', () => onOrderSlotClick(slot));
+        $orderSlots.appendChild(slot);
+      }
+      q.cards.forEach(v => $cardRow.appendChild(createDraggableCard(v, false)));
+      $actionRow.hidden = false;
+      moveFrogTo(50, false);
+    }
+    else if (q.type === 'nearestTen' || q.type === 'between' || q.type === 'halfway') {
+      $targetDisplay.textContent = q.target;
+      $mcRow.hidden = false;
+      q.choices.forEach(c => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mc-btn';
+        btn.textContent    = localizeChoiceLabel(c);
+        btn.dataset.value  = String(c);
+        btn.addEventListener('click', () => onMCClicked(btn, c, q.correct));
+        $mcRow.appendChild(btn);
+      });
+      moveFrogTo(q.target, false);
+      if (q.type === 'halfway') {
+        setTimeout(() => {
+          if (state.current === q && !state.locked) showInlineHint(q.hint);
+        }, 2500);
+      }
+    }
+  }
+
+  function showInlineHint(hintFn) {
+    const text = typeof hintFn === 'function' ? hintFn() : hintFn;
+    if (!text) return;
+    $feedback.textContent = '💡 ' + text;
+    $feedback.className   = 'feedback';
+    $feedback.style.color = 'var(--ink-soft)';
+    $feedback.style.fontStyle = 'italic';
+    setTimeout(() => {
+      if (!state.locked) { $feedback.style.fontStyle = ''; $feedback.style.color = ''; }
+    }, 5000);
+  }
+
+  /* ---------- Draggable card creation ---------- */
+  function createDraggableCard(value, isTarget) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className    = 'num-card' + (isTarget ? ' target' : '');
+    card.textContent  = String(value);
+    card.dataset.value = String(value);
+    card.tabIndex = 0;
+    card.addEventListener('click', () => {
+      if (state.locked) return;
+      if (card.dataset.justDragged === '1') { delete card.dataset.justDragged; return; }
+      if (state.current.type === 'order') selectOrderCard(card);
+    });
+    attachDragHandlers(card);
+    return card;
+  }
+
+  /* ---------- Pointer-based drag ---------- */
+  function attachDragHandlers(card) {
+    let startX = 0, startY = 0, isDragging = false, activePointerId = null;
+
+    card.addEventListener('pointerdown', (e) => {
+      if (state.locked) return;
+      startX = e.clientX; startY = e.clientY;
+      isDragging = false; activePointerId = e.pointerId;
+    });
+
+    card.addEventListener('pointermove', (e) => {
+      if (state.locked || activePointerId !== e.pointerId) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!isDragging && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+        isDragging = true;
+        /* If dragging a placed card, lift it out of its slot first */
+        if (card.classList.contains('placed') && state.current && state.current.type === 'order') {
+          for (const [i, fill] of Object.entries(state.orderSlotFills)) {
+            if (fill.cardNode === card) {
+              const srcSlot = $orderSlots.querySelector(`[data-idx="${i}"]`);
+              if (srcSlot) unplaceFromSlot(srcSlot);
+              break;
+            }
+          }
+        }
+        startDragGhost(card, e.clientX, e.clientY);
+        try { card.setPointerCapture(e.pointerId); } catch (_) {}
+        if (state.current.type === 'place' || state.current.type === 'estimate') {
+          $dropOverlay.classList.add('active');
+        } else if (state.current.type === 'order') {
+          /* highlight ALL slots as drop targets */
+          [...$orderSlots.querySelectorAll('.order-slot')].forEach(s => s.classList.add('target'));
+        }
+      }
+      if (isDragging) updateDragGhost(e.clientX, e.clientY);
+    });
+
+    card.addEventListener('pointerup', (e) => {
+      if (activePointerId !== e.pointerId) return;
+      if (isDragging) {
+        const x = e.clientX, y = e.clientY;
+        clearDragGhost();
+        if (state.current.type === 'place' || state.current.type === 'estimate') {
+          $dropOverlay.classList.remove('active');
+          const rect = $riverContainer.getBoundingClientRect();
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            evaluatePlace(card, clientXToValue(x));
+          }
+        } else if (state.current.type === 'order') {
+          const under = document.elementFromPoint(x, y);
+          const slot  = under ? under.closest('.order-slot') : null;
+          [...$orderSlots.querySelectorAll('.order-slot')].forEach(s => s.classList.remove('target'));
+          if (slot) {
+            /* if the slot is already filled, un-place its card first (swap) */
+            if (slot.classList.contains('filled')) unplaceFromSlot(slot);
+            placeCardInOrderSlot(card, slot);
+          }
+        }
+        card.dataset.justDragged = '1';
+        setTimeout(() => { delete card.dataset.justDragged; }, 50);
+      }
+      isDragging = false; activePointerId = null;
+      try { card.releasePointerCapture(e.pointerId); } catch (_) {}
+    });
+
+    card.addEventListener('pointercancel', () => {
+      isDragging = false; activePointerId = null;
+      clearDragGhost();
+      $dropOverlay.classList.remove('active');
+      [...$orderSlots.querySelectorAll('.order-slot')].forEach(s => s.classList.remove('target'));
+    });
+  }
+
+  function startDragGhost(card, x, y) {
+    const ghost = card.cloneNode(true);
+    ghost.classList.add('drag-ghost');
+    ghost.classList.remove('target');
+    ghost.style.left   = x + 'px';  ghost.style.top    = y + 'px';
+    ghost.style.width  = card.offsetWidth  + 'px';
+    ghost.style.height = card.offsetHeight + 'px';
+    document.body.appendChild(ghost);
+    state.dragGhost = ghost; state.dragOriginCard = card;
+    card.classList.add('dragging');
+  }
+  function updateDragGhost(x, y) {
+    if (!state.dragGhost) return;
+    state.dragGhost.style.left = x + 'px';
+    state.dragGhost.style.top  = y + 'px';
+  }
+  function clearDragGhost() {
+    if (state.dragGhost) { state.dragGhost.remove(); state.dragGhost = null; }
+    if (state.dragOriginCard) {
+      state.dragOriginCard.classList.remove('dragging');
+      state.dragOriginCard = null;
+    }
+  }
+
+  /* ---------- Place mode evaluation ---------- */
+  function evaluatePlace(card, droppedValue) {
+    if (state.locked) return;
+    const q = state.current, target = q.target;
+    const off = Math.abs(droppedValue - target);
+    const tolerance = q.tolerance || PLACE_TOLERANCE_NORMAL;
+
+    addDropMarker(droppedValue, 'user');
+    addDropMarker(target, 'correct');
+    drawDistanceLine(droppedValue, target);
+
+    $distanceReadout.innerHTML = S('distanceReadout', droppedValue, target, off);
+    $distanceReadout.classList.add('show');
+    moveFrogTo(target, true);
+
+    if (off <= tolerance) { handleCorrect(null); }
+    else                  { handleWrong(null, target, off); }
+  }
+
+  function addDropMarker(value, type) {
+    const m = document.createElement('div');
+    m.className = 'stone ' + (type === 'user' ? 'user-marker' : 'correct-marker');
+    m.style.left = valueToPercent(value) + '%';
+    m.style.width = '32px'; m.style.height = '26px'; m.style.fontSize = '0.75rem';
+    m.textContent = value;
+    $stonesContainer.appendChild(m);
+  }
+
+  function drawDistanceLine(userVal, correctVal) {
+    const left = Math.min(userVal, correctVal), right = Math.max(userVal, correctVal);
+    if (left === right) return;
+    const line = document.createElement('div');
+    line.className  = 'distance-line';
+    line.style.left = valueToPercent(left) + '%';
+    line.style.width = (valueToPercent(right) - valueToPercent(left)) + '%';
+    $stonesContainer.appendChild(line);
+  }
+
+  /* ---------- Order mode ---------- */
+  function unplaceFromSlot(slot) {
+    const idx  = slot.dataset.idx;
+    const fill = state.orderSlotFills[idx];
+    if (fill && fill.cardNode) fill.cardNode.classList.remove('placed');
+    delete state.orderSlotFills[idx];
+    slot.classList.remove('filled');
+    slot.textContent = '';
+  }
+
+  function selectOrderCard(card) {
+    if (state.selectedCard === card) {
+      card.style.outline = ''; state.selectedCard = null;
+      [...$orderSlots.querySelectorAll('.order-slot')].forEach(s => s.classList.remove('target'));
+      return;
+    }
+    if (state.selectedCard) state.selectedCard.style.outline = '';
+    state.selectedCard = card;
+    card.style.outline = '4px solid var(--accent-pink)';
+    card.style.outlineOffset = '2px';
+    /* highlight all slots — clicking a filled one will swap */
+    [...$orderSlots.querySelectorAll('.order-slot')].forEach(s => s.classList.add('target'));
+  }
+
+  function onOrderSlotClick(slot) {
+    if (state.locked) return;
+    if (slot.classList.contains('filled')) {
+      unplaceFromSlot(slot);
+      /* if a card was already selected, place it here immediately (one-tap swap) */
+      if (state.selectedCard) {
+        placeCardInOrderSlot(state.selectedCard, slot);
+        state.selectedCard.style.outline = '';
+        state.selectedCard = null;
+        [...$orderSlots.querySelectorAll('.order-slot')].forEach(s => s.classList.remove('target'));
+      }
+      return;
+    }
+    if (state.selectedCard) {
+      placeCardInOrderSlot(state.selectedCard, slot);
+      state.selectedCard.style.outline = ''; state.selectedCard = null;
+      [...$orderSlots.querySelectorAll('.order-slot')].forEach(s => s.classList.remove('target'));
+    }
+  }
+
+  function placeCardInOrderSlot(card, slot) {
+    const value = parseInt(card.dataset.value, 10);
+    const idx   = slot.dataset.idx;
+
+    /* If this card is currently placed in a different slot, lift it out first */
+    if (card.classList.contains('placed')) {
+      for (const [i, fill] of Object.entries(state.orderSlotFills)) {
+        if (fill.cardNode === card && i !== idx) {
+          const oldSlot = $orderSlots.querySelector(`[data-idx="${i}"]`);
+          if (oldSlot) unplaceFromSlot(oldSlot);
+          break;
+        }
+      }
+    }
+
+    /* If the target slot is already occupied by a different card, un-place that card */
+    if (slot.classList.contains('filled')) unplaceFromSlot(slot);
+
+    slot.classList.remove('target');
+    slot.classList.add('filled');
+    slot.textContent = String(value);
+    card.classList.add('placed');
+    state.orderSlotFills[idx] = { value, cardNode: card };
+  }
+
+  /* ---------- Check / Clear ---------- */
+  function onClearClicked() {
+    if (state.locked || !state.current) return;
+    if (state.current.type === 'order') {
+      /* un-place every filled slot */
+      [...$orderSlots.querySelectorAll('.order-slot.filled')].forEach(s => unplaceFromSlot(s));
+      /* clear any remaining highlight classes */
+      [...$orderSlots.querySelectorAll('.order-slot')].forEach(s =>
+        s.classList.remove('target', 'correct-flash', 'wrong-flash'));
+      /* restore all pool cards */
+      [...$cardRow.querySelectorAll('.num-card')].forEach(c => {
+        c.classList.remove('placed');
+        c.style.outline = '';
+      });
+      state.orderSlotFills = {};
+      state.selectedCard   = null;
+    }
+  }
+
+  function onCheckClicked() {
+    if (state.locked || !state.current) return;
+    if (state.current.type === 'order') {
+      const expected = state.current.correctOrder;
+      const placed = [];
+      for (let i = 0; i < expected.length; i++) {
+        const fill = state.orderSlotFills[i];
+        placed.push(fill ? fill.value : null);
+      }
+      if (placed.some(v => v === null)) {
+        $feedback.textContent = S('fillAllSlots');
+        $feedback.className   = 'feedback bad';
+        return;
+      }
+      if (placed.every((v, i) => v === expected[i])) {
+        [...$orderSlots.querySelectorAll('.order-slot')].forEach(s => s.classList.add('correct-flash'));
+        handleCorrect(null);
+      } else {
+        [...$orderSlots.querySelectorAll('.order-slot')].forEach((s, i) => {
+          s.classList.add(placed[i] === expected[i] ? 'correct-flash' : 'wrong-flash');
+        });
+        handleWrong(null, expected.join(' < '), null);
+      }
+    }
+  }
+
+  /* ---------- MC click ---------- */
+  function onMCClicked(btn, value, correctValue) {
+    if (state.locked) return;
+    if (String(value) === String(correctValue)) {
+      handleCorrect(btn);
+    } else {
+      handleWrong(btn, correctValue, null);
+    }
+  }
+
+  /* ---------- Outcome handlers ---------- */
+  function handleCorrect(btn) {
+    state.locked = true;
+    state.progress = Math.min(TARGET_PROGRESS, state.progress + INCREMENT_RIGHT);
+    const praiseList = S('praises')[state.current.type] || S('praises').place;
+    $feedback.textContent = pick(praiseList);
+    $feedback.className   = 'feedback good';
+    if (btn) btn.classList.add('correct-flash');
+    if (state.current.type !== 'place' && state.current.type !== 'estimate') {
+      moveFrogTo(state.current.target || 50, true);
+    }
+    updateProgress();
+    if (state.progress >= TARGET_PROGRESS) {
+      setTimeout(showReward, 1000);
+    } else {
+      setTimeout(nextQuestion, FEEDBACK_DELAY);
+    }
+  }
+
+  function handleWrong(btn, correctDisplay, off) {
+    state.locked = true;
+    state.progress = Math.max(0, state.progress - DECREMENT_WRONG);
+
+    const display = (state.current.type === 'between' && typeof correctDisplay === 'string')
+      ? localizeChoiceLabel(correctDisplay)
+      : correctDisplay;
+
+    let msg;
+    const t = state.current.type;
+    if      (t === 'estimate' && off !== null) msg = S('wrongEstimate', off, display);
+    else if (t === 'place'    && off !== null) msg = S('wrongPlace',    off, display);
+    else if (t === 'halfway')                  msg = S('wrongHalfway',  display);
+    else if (t === 'order')                    msg = S('wrongOrder',    display);
+    else                                        msg = S('wrongGeneric', display);
+
+    $feedback.textContent = msg;
+    $feedback.className   = 'feedback bad';
+    if (btn) btn.classList.add('wrong-flash');
+
+    if (['nearestTen', 'between', 'halfway'].includes(t)) {
+      [...$mcRow.querySelectorAll('.mc-btn')].forEach(b => {
+        if (b.dataset.value === String(state.current.correct)) b.classList.add('correct-flash');
+      });
+    }
+    updateProgress();
+    setTimeout(nextQuestion, FEEDBACK_DELAY + 900);
+  }
+
+  /* ---------- Main loop ---------- */
+  function nextQuestion() {
+    const gen = pickGenerator(state.progress);
+    const q   = gen();
+    state.current = q;
+    renderQuestion(q);
+  }
+
+  /* ---------- Hint toggle ---------- */
+  function toggleHint() {
+    state.hintOn = !state.hintOn;
+    $hintBtn.classList.toggle('active', state.hintOn);
+    $hintBtn.setAttribute('aria-pressed', String(state.hintOn));
+    if (state.current) {
+      renderStones(state.current);
+      if (state.current.type === 'place' || state.current.type === 'estimate') {
+        moveFrogTo(0, false);
+      } else if (state.current.highlightStone !== undefined) {
+        moveFrogTo(state.current.highlightStone, false);
+      } else {
+        moveFrogTo(50, false);
+      }
+    }
+    if (state.hintOn && state.current && state.current.hint && !state.locked) {
+      showInlineHint(state.current.hint);
+    }
+  }
+
+  /* ---------- Reward ---------- */
+  function showReward() {
+    const reward = chooseReward(rewardStore.list);
+    mountReward($rewardImageWrap, reward, S('rewardMissing'));
+    spawnConfetti($confettiLayer, ['#5bbcdb', '#2e8cb5', '#7fd14f', '#ffd23f', '#ff7eb6', '#9b5cff']);
+    $rewardModal.hidden = false;
+    $playAgainBtn.focus();
+  }
+
+  /* ---------- Reset ---------- */
+  function resetGame() {
+    state.progress = 0;
+    state.locked   = false;
+    updateProgress();
+    $rewardModal.hidden = true;
+    $confettiLayer.innerHTML = '';
+    nextQuestion();
+  }
+
+  /* ---------- Keyboard ---------- */
+  document.addEventListener('keydown', (e) => {
+    if (state.locked || !state.current) return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    const q = state.current;
+    if (['nearestTen', 'between', 'halfway'].includes(q.type)) {
+      if (['1','2','3','4'].includes(e.key)) {
+        const btns = $mcRow.querySelectorAll('.mc-btn');
+        const idx  = parseInt(e.key, 10) - 1;
+        if (btns[idx]) btns[idx].click();
+      }
+    } else if (q.type === 'order') {
+      if (e.key === 'Enter')  onCheckClicked();
+      if (e.key === 'Escape') onClearClicked();
+    }
+  });
+
+  /* ---------- Init ---------- */
+  $checkBtn.addEventListener('click', onCheckClicked);
+  $clearBtn.addEventListener('click', onClearClicked);
+  $hintBtn.addEventListener('click', toggleHint);
+  $playAgainBtn.addEventListener('click', resetGame);
+  $langToggleBtn.addEventListener('click', () => setLang(lang === 'tr' ? 'en' : 'tr'));
+
+  applyStaticStrings();
+  nextQuestion();
+
+})();
+</script>
+</body>
+</html>

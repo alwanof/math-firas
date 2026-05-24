@@ -4,108 +4,20 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
 <title>Onluk İnşaatçı — Grade 2 Math Game</title>
+<link rel="stylesheet" href="../shared/mf-design.css">
 <style>
 /* =========================================================================
-   BASE-TEN BUILDER / ONLUK İNŞAATÇI — Grade 2 Math Game
-   Target concept: tens and ones place value (Turkish curriculum MAT.2.1.2)
-   Single-file, no external libraries.
+   BASE-TEN BUILDER — game-specific styles only
+   Target: MAT.2.1.2  Tens and ones place value
    ========================================================================= */
 
-/* -------- Design tokens (matching spec exactly) -------- */
-:root {
-  --sky-top:    #ffd9a8;
-  --sky-mid:    #ffb88c;
-  --sky-bottom: #87ceeb;
-  --sun:        #ffd23f;
-  --cloud:      #ffffff;
-  --road:       #3a3a4d;
-  --road-line:  #fff5b1;
-  --ink:        #1f1d2c;
-  --ink-soft:   #4a4760;
-  --good:       #4caf50;
-  --bad:        #ef4f4f;
-  --warm:       #ff7a59;
-  --tens-block: #ff7a59;
-  --tens-edge:  #b8401e;
-  --tens-zone:  #fff1ea;
-  --tens-zone-edge: #ff7a59;
-  --ones-block: #3f86ff;
-  --ones-edge:  #1b4dad;
-  --ones-zone:  #e7f0ff;
-  --ones-zone-edge: #3f86ff;
-  --b1: #ff5252;
-  --b2: #ffca28;
-  --b3: #66bb6a;
-  --b4: #42a5f5;
-  --b5: #ab47bc;
-  --b6: #ff9800;
+/* -------- Ambient container -------- */
+.ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-
-body {
-  font-family: "Comic Sans MS","Chalkboard SE","Comic Neue","Trebuchet MS",system-ui,sans-serif;
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 35%, var(--sky-bottom) 100%);
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-#app {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* -------- Header & progress bar -------- */
-header {
-  position: relative;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 1.25rem;
-  background: rgba(255,255,255,0.85);
-  border-bottom: 4px solid var(--ink);
-  box-shadow: 0 4px 0 var(--ink);
-}
-.title {
-  font-size: clamp(1.1rem, 3.2vw, 1.9rem);
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  text-shadow: 2px 2px 0 var(--sun);
-  white-space: nowrap;
-}
-
-/* -------- Language toggle -------- */
-.lang-toggle {
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 900;
-  padding: 0.3rem 0.8rem;
-  background: var(--ink);
-  color: #fff;
-  border: 3px solid var(--ink);
-  border-radius: 20px;
-  cursor: pointer;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
-  letter-spacing: 0.05em;
-  flex-shrink: 0;
-  transition: background 0.15s;
-}
-.lang-toggle:hover { background: var(--ink-soft); }
-.lang-toggle:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.3); }
-.lang-toggle:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 
 /* -------- Level chip -------- */
 .level-chip {
@@ -144,83 +56,10 @@ header {
   justify-content: center;
 }
 
-.progress-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-width: 0;
-  flex: 1;
-  max-width: 360px;
-}
-.progress-track {
-  flex: 1;
-  height: 22px;
-  background: #fff;
-  border: 3px solid var(--ink);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 2px 2px 0 var(--ink);
-}
-.progress-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #ff5252 0%, #ffca28 50%, #66bb6a 100%);
-  transition: width 0.4s cubic-bezier(.34,1.56,.64,1);
-}
-.progress-text {
-  font-weight: 700;
-  font-size: 0.9rem;
-  min-width: 50px;
-  text-align: right;
-}
+/* -------- Scoped progress-wrap max-width (override shared default) -------- */
+.progress-wrap { max-width: 360px; }
 
-/* -------- Decorative ambient background -------- */
-.ambient {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-.sun {
-  position: absolute;
-  top: 70px;
-  right: 8%;
-  width: 80px;
-  height: 80px;
-  background: var(--sun);
-  border-radius: 50%;
-  box-shadow: 0 0 50px rgba(255,210,63,0.7), 4px 4px 0 var(--ink);
-  border: 4px solid var(--ink);
-}
-.cloud {
-  position: absolute;
-  background: var(--cloud);
-  border: 3px solid var(--ink);
-  border-radius: 50px;
-  box-shadow: 4px 4px 0 var(--ink);
-}
-.cloud::before, .cloud::after {
-  content: "";
-  position: absolute;
-  background: var(--cloud);
-  border: 3px solid var(--ink);
-  border-radius: 50%;
-}
-.cloud-1 { top: 80px;  left: 5%;   width: 90px; height: 28px; animation: drift 50s linear infinite; }
-.cloud-1::before { width: 40px; height: 40px; top: -22px; left: 14px; }
-.cloud-1::after  { width: 30px; height: 30px; top: -16px; left: 50px; }
-.cloud-2 { top: 150px; left: 35%;  width: 70px; height: 22px; animation: drift 65s linear infinite; animation-delay: -25s; }
-.cloud-2::before { width: 32px; height: 32px; top: -18px; left: 10px; }
-.cloud-2::after  { width: 24px; height: 24px; top: -12px; left: 36px; }
-.cloud-3 { top: 110px; right: 25%; width: 80px; height: 26px; animation: drift 55s linear infinite; animation-delay: -15s; }
-.cloud-3::before { width: 36px; height: 36px; top: -20px; left: 12px; }
-.cloud-3::after  { width: 26px; height: 26px; top: -14px; left: 42px; }
-@keyframes drift {
-  0%   { transform: translateX(-200px); }
-  100% { transform: translateX(calc(100vw + 200px)); }
-}
-
-/* Construction crane silhouette */
+/* -------- Construction crane silhouette -------- */
 .crane {
   position: absolute;
   bottom: 80px;
@@ -254,32 +93,6 @@ header {
   50%      { transform: rotate(8deg); }
 }
 
-/* -------- Ground strip -------- */
-.ground {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 80px;
-  background: var(--road);
-  border-top: 4px solid var(--ink);
-  z-index: 1;
-  overflow: hidden;
-}
-.ground::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0; right: 0;
-  height: 6px;
-  transform: translateY(-50%);
-  background: repeating-linear-gradient(
-    to right,
-    var(--road-line) 0 40px,
-    transparent 40px 80px
-  );
-  animation: roadlines 1.5s linear infinite;
-}
-@keyframes roadlines { to { background-position: -80px 0; } }
-
 /* -------- Main game area -------- */
 main {
   position: relative;
@@ -293,7 +106,7 @@ main {
   overflow-y: auto;
 }
 
-/* -------- Question prompt card -------- */
+/* -------- Prompt card -------- */
 .prompt-card {
   background: rgba(255,255,255,0.97);
   border: 4px solid var(--ink);
@@ -359,13 +172,11 @@ main {
   flex-direction: column;
   gap: 0.5rem;
 }
-
 .zones {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
 }
-
 .zone {
   position: relative;
   border: 4px dashed var(--ink);
@@ -376,9 +187,8 @@ main {
   flex-direction: column;
   overflow: hidden;
 }
-.zone.tens { background: var(--tens-zone); border-color: var(--tens-zone-edge); }
-.zone.ones { background: var(--ones-zone); border-color: var(--ones-zone-edge); }
-
+.zone.tens { background: var(--tens-zone, #fff1ea); border-color: var(--tens-zone-edge, var(--tens-block)); }
+.zone.ones { background: var(--ones-zone, #e7f0ff); border-color: var(--ones-zone-edge, var(--ones-block)); }
 .zone-header {
   display: flex;
   align-items: center;
@@ -412,8 +222,6 @@ main {
   min-width: 40px;
   text-align: center;
 }
-
-/* Hint overlay */
 .zone-hint {
   font-size: 0.78rem;
   color: var(--ink-soft);
@@ -425,8 +233,6 @@ main {
   display: none;
 }
 .zone-hint.visible { display: block; }
-
-/* Block holder */
 .block-area {
   flex: 1;
   display: flex;
@@ -437,22 +243,16 @@ main {
   min-height: 110px;
 }
 
-/* Tens rod */
+/* -------- Interactive block overrides -------- */
+/* The shared .tens-rod provides the grid/color/border base.
+   Below we add interactive behavior specific to this game. */
 .tens-rod {
-  display: grid;
-  grid-template-rows: repeat(10, 1fr);
-  width: 18px;
-  height: 100px;
-  background: var(--tens-block);
-  border: 2px solid var(--tens-edge);
-  border-radius: 4px;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   animation: blockPop 0.35s cubic-bezier(.34,1.56,.64,1);
   box-shadow: 2px 2px 0 var(--tens-edge);
 }
-.tens-rod > span { border-bottom: 1px solid var(--tens-edge); pointer-events: none; }
-.tens-rod > span:last-child { border-bottom: none; }
+.tens-rod > span { pointer-events: none; }
 .tens-rod:hover { transform: translateY(-3px); box-shadow: 2px 5px 0 var(--tens-edge); }
 .tens-rod.removing { animation: blockFly 0.3s ease-in forwards; }
 .tens-rod.regrouped {
@@ -460,13 +260,10 @@ main {
   box-shadow: 0 0 20px var(--good), 2px 2px 0 var(--tens-edge);
 }
 
-/* Ones cube */
+/* Ones cubes in this game are 18×18 (larger + interactive) */
 .ones-cube {
   width: 18px;
   height: 18px;
-  background: var(--ones-block);
-  border: 2px solid var(--ones-edge);
-  border-radius: 4px;
   cursor: pointer;
   transition: transform 0.15s ease;
   animation: blockPop 0.3s cubic-bezier(.34,1.56,.64,1);
@@ -480,17 +277,14 @@ main {
   border-color: #2d7a31;
 }
 
-/* Locked (pre-filled, read-only) blocks — slightly dimmed, no hover */
+/* Locked (pre-filled, read-only) blocks */
 .tens-rod.locked, .ones-cube.locked {
   cursor: default;
   opacity: 0.85;
   filter: saturate(0.85);
 }
-.tens-rod.locked:hover, .ones-cube.locked:hover {
-  transform: none;
-  box-shadow: 2px 2px 0 var(--tens-edge);
-}
-.ones-cube.locked:hover { box-shadow: 2px 2px 0 var(--ones-edge); }
+.tens-rod.locked:hover  { transform: none; box-shadow: 2px 2px 0 var(--tens-edge); }
+.ones-cube.locked:hover { transform: none; box-shadow: 2px 2px 0 var(--ones-edge); }
 
 @keyframes blockPop {
   0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
@@ -512,7 +306,7 @@ main {
   100% { transform: scale(1); }
 }
 
-/* Zone action buttons */
+/* -------- Zone action buttons -------- */
 .zone-actions {
   display: flex;
   gap: 0.4rem;
@@ -534,14 +328,14 @@ main {
   min-width: 60px;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-.zone-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
-.zone-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.zone-btn:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+.zone-btn:active { transform: translate(2px, 2px);  box-shadow: 1px 1px 0 var(--ink); }
 .zone-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 .zone-btn.add.tens-color { background: var(--tens-block); color: #fff; }
 .zone-btn.add.ones-color { background: var(--ones-block); color: #fff; }
 .zone-btn[disabled] { opacity: 0.4; cursor: not-allowed; box-shadow: 1px 1px 0 var(--ink); transform: none; }
 
-/* Live equation summary */
+/* -------- Live equation summary -------- */
 .summary {
   display: flex;
   align-items: center;
@@ -585,12 +379,12 @@ main {
 }
 .action-btn.check { background: var(--good); color: #fff; flex: 2; min-width: 120px; }
 .action-btn.clear { background: #fff; color: var(--ink); flex: 1; min-width: 100px; }
-.action-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
-.action-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.action-btn:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+.action-btn:active { transform: translate(2px, 2px);  box-shadow: 2px 2px 0 var(--ink); }
 .action-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 .action-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
 
-/* Multiple-choice buttons */
+/* -------- Multiple-choice row -------- */
 .mc-row {
   width: min(720px, 94vw);
   display: flex;
@@ -615,36 +409,13 @@ main {
 .mc-btn:nth-child(1) { background: #ff5252; color: #fff; }
 .mc-btn:nth-child(2) { background: #66bb6a; color: #fff; }
 .mc-btn:nth-child(3) { background: #42a5f5; color: #fff; }
-.mc-btn:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--ink); }
-.mc-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.mc-btn:hover  { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 var(--ink); }
+.mc-btn:active { transform: translate(2px, 2px);  box-shadow: 2px 2px 0 var(--ink); }
 .mc-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 .mc-btn.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; }
-.mc-btn.wrong-flash   { animation: wrongShake 0.5s ease;   background: var(--bad)  !important; }
-@keyframes correctPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-@keyframes wrongShake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-8px); }
-  40%, 80% { transform: translateX(8px); }
-}
+.mc-btn.wrong-flash   { animation: wrongShake  0.5s ease; background: var(--bad)  !important; }
 
-/* -------- Feedback -------- */
-.feedback {
-  min-height: 36px;
-  font-size: clamp(1rem, 2.4vw, 1.25rem);
-  font-weight: 800;
-  text-align: center;
-  padding: 0.3rem 1rem;
-}
-.feedback.good { color: var(--good); animation: bounceIn 0.5s ease; }
-.feedback.bad  { color: var(--bad);  animation: bounceIn 0.5s ease; }
-.feedback.info { color: var(--ink-soft); }
-@keyframes bounceIn {
-  0%   { transform: scale(0.5); opacity: 0; }
-  60%  { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1); }
-}
-
-/* Regrouping toast */
+/* -------- Regrouping toast -------- */
 .regroup-toast {
   position: fixed;
   top: 80px;
@@ -668,103 +439,6 @@ main {
 .regroup-toast.show {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
-}
-
-/* -------- Reward modal -------- */
-.reward-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(31,29,44,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 1rem;
-  backdrop-filter: blur(4px);
-}
-.reward-modal[hidden] { display: none; }
-.reward-card {
-  background: #fff;
-  border: 5px solid var(--ink);
-  border-radius: 24px;
-  padding: 1.5rem 2rem;
-  box-shadow: 10px 10px 0 var(--ink);
-  text-align: center;
-  max-width: 500px;
-  width: 92vw;
-  animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1);
-  position: relative;
-  z-index: 2;
-}
-@keyframes popIn {
-  0%   { transform: scale(0) rotate(-15deg); }
-  100% { transform: scale(1) rotate(0); }
-}
-.reward-card h2 {
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
-  margin-bottom: 1rem;
-  color: var(--warm);
-  text-shadow: 3px 3px 0 var(--ink);
-}
-.reward-image-wrap {
-  width: 220px;
-  height: 140px;
-  margin: 0 auto 1rem;
-  border: 4px solid var(--ink);
-  border-radius: 12px;
-  background: linear-gradient(135deg, #f5e9c5, #e8c873);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-.reward-image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.reward-image-wrap .fallback {
-  font-size: 1.2rem;
-  font-weight: 900;
-  color: var(--ink);
-  padding: 0.5rem;
-  text-align: center;
-  line-height: 1.3;
-}
-.reward-msg {
-  font-size: 1.05rem;
-  margin-bottom: 1.25rem;
-  color: var(--ink-soft);
-}
-.play-again {
-  font-family: inherit;
-  font-size: 1.25rem;
-  font-weight: 900;
-  padding: 0.8rem 2rem;
-  background: var(--good);
-  color: #fff;
-  border: 4px solid var(--ink);
-  border-radius: 14px;
-  box-shadow: 4px 4px 0 var(--ink);
-  cursor: pointer;
-}
-.play-again:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
-.play-again:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
-.play-again:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
-
-.confetti-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 1;
-}
-.confetti-piece {
-  position: absolute;
-  width: 10px;
-  height: 14px;
-  top: -20px;
-  animation: confettiFall linear forwards;
-}
-@keyframes confettiFall {
-  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
-  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.9; }
 }
 
 /* -------- Mobile tweaks -------- */
@@ -791,7 +465,7 @@ main {
     <div class="cloud cloud-3"></div>
     <div class="crane"></div>
   </div>
-  <div class="ground" aria-hidden="true"></div>
+  <div class="road" aria-hidden="true"></div>
 
   <!-- ============ Header & progress bar ============ -->
   <header>
@@ -800,10 +474,12 @@ main {
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
       <div class="progress-text" id="progressText">0 / 10</div>
     </div>
-    <div class="level-chip" id="levelChip" aria-live="polite">
-      <span id="levelLabel">Seviye</span> <span id="levelValue">1</span>
+    <div class="header-end">
+      <div class="level-chip" id="levelChip" aria-live="polite">
+        <span id="levelLabel">Seviye</span> <span id="levelValue">1</span>
+      </div>
+      <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
     </div>
-    <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
   </header>
 
   <!-- ============ Main game ============ -->
@@ -900,6 +576,7 @@ main {
 
 </div>
 
+<script src="../shared/mf-core.js"></script>
 <script>
 /* =========================================================================
    BASE-TEN BUILDER — game logic
@@ -907,10 +584,13 @@ main {
 (() => {
   'use strict';
 
+  /* ---------- MF helpers aliased locally ---------- */
+  const { rand, pick, shuffle, spawnConfetti, loadRewards, chooseReward, mountReward } = MF;
+
   /* ---------- Config ---------- */
   const TARGET_PROGRESS  = 10;
   const INCREMENT_RIGHT = 1;
-  const DECREMENT_WRONG  = 0;   /* Grade 2: no penalty on wrong answers */
+  const DECREMENT_WRONG  = 0;   // no penalty on wrong answers
   const FEEDBACK_DELAY   = 1100;
 
   const MAX_TENS = 12;
@@ -1052,7 +732,6 @@ main {
     $sumOnesWordEl.textContent  = S('onesWord');
     $regroupToastEl.textContent = S('regroupToast');
     $levelLabelEl.textContent   = S('level');
-    /* ARIA labels */
     $addTensEl.setAttribute('aria-label',    S('ariaAddTen'));
     $removeTensEl.setAttribute('aria-label', S('ariaRemoveTen'));
     $addOnesEl.setAttribute('aria-label',    S('ariaAddOne'));
@@ -1064,44 +743,10 @@ main {
     document.title = S('title').replace(/^🏗️\s*/, '') + ' — Grade 2 Math';
   }
 
-  /* ---------- Rewards ----------
-     Paths are relative to THIS file (games/<slug>.html),
-     so reward images live at ../images/ from here.
-  --------------------------------------------- */
-  /* Rewards: overridden at runtime by /config.json if present */
-  let REWARDS = [
-    { src: '../images/1tl.jpg',  weight: 10, label: '1 TL'  },
-    { src: '../images/5tl.jpg',  weight: 50, label: '5 TL'  },
-    { src: '../images/10tl.jpg', weight: 20, label: '10 TL' },
-    { src: '../images/20tl.jpg', weight: 20, label: '20 TL' },
-  ];
+  /* ---------- Rewards ---------- */
+  const rewardStore = loadRewards();
 
-  fetch('../config.json', { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : null)
-    .then(cfg => {
-      if (!cfg || !Array.isArray(cfg.rewards) || !cfg.rewards.length) return;
-      const next = cfg.rewards.map(r => ({
-        src: /^(\.\.\/|\/|https?:\/\/)/.test(r.src) ? r.src : '../' + String(r.src).replace(/^\.?\//, ''),
-        weight: Number(r.weight) || 0,
-        label: String(r.label || ''),
-      })).filter(r => r.src && r.weight > 0);
-      if (next.length) REWARDS = next;
-    })
-    .catch(() => { /* keep hardcoded REWARDS as fallback */ });
-
-  /* ---------- Helpers ---------- */
-  const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
-  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
-  function shuffle(arr) {
-    const a = arr.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
+  /* ---------- Game-specific distractor helper (different strategy from MF.makeDistractors) ---------- */
   function makeDistractors(answer, count = 2) {
     const used = new Set([answer]);
     const out = [];
@@ -1130,11 +775,7 @@ main {
     return out;
   }
 
-  /* ---------- Difficulty progression ----------
-     Level 1 (progress 0-2): small numbers 11-39, only build/identify
-     Level 2 (progress 3-5): full range 10-99 + place value + expanded form
-     Level 3 (progress 6+):  + compare + build-partial (workspace pre-filled)
-  -------------------------------------------------- */
+  /* ---------- Difficulty progression ---------- */
   function currentLevel() {
     if (state.progress <= 2) return 1;
     if (state.progress <= 5) return 2;
@@ -1154,13 +795,7 @@ main {
     const [lo, hi] = rangeForLevel();
     const choices = lvl === 1
       ? [rand(11, 19), rand(2, 3) * 10, rand(lo, hi), rand(lo, hi)]
-      : [
-          rand(11, 19),           /* teens */
-          rand(2, 9) * 10,        /* round tens */
-          rand(2, 9) * 11,        /* doubles 22, 33, 44... */
-          rand(lo, hi),
-          rand(lo, hi),
-        ];
+      : [rand(11, 19), rand(2, 9) * 10, rand(2, 9) * 11, rand(lo, hi), rand(lo, hi)];
     const target = pick(choices);
     return { mode: 'build', target, instructionKey: 'buildInstr' };
   }
@@ -1200,24 +835,20 @@ main {
     };
   }
 
-  /* Expanded form: 47 = ? + 7  →  choose 40 */
   function genExpandedFormMode() {
     const [lo, hi] = rangeForLevel();
     let num = rand(Math.max(lo, 21), hi);
-    if (num % 10 === 0) num += rand(1, 9);   /* avoid trivial round tens */
+    if (num % 10 === 0) num += rand(1, 9);
     const tens = Math.floor(num / 10) * 10;
     const ones = num % 10;
     const askTens = Math.random() < 0.5;
     const correct = askTens ? tens : ones;
     const set = new Set([correct]);
     const choices = [correct];
-    /* swap distractor (the OTHER digit's value) — classic confusion */
     const swap = askTens ? Math.floor(num / 10) : ones * 10;
     if (!set.has(swap) && swap !== 0) { choices.push(swap); set.add(swap); }
     while (choices.length < 3) {
-      const d = askTens
-        ? (rand(1, 9) * 10)
-        : rand(1, 9);
+      const d = askTens ? (rand(1, 9) * 10) : rand(1, 9);
       if (!set.has(d)) { choices.push(d); set.add(d); }
     }
     return {
@@ -1233,16 +864,14 @@ main {
     };
   }
 
-  /* Compare: which is bigger (or smaller)? */
   function genCompareMode() {
     const [lo, hi] = rangeForLevel();
     let a = rand(lo, hi);
     let b = rand(lo, hi);
-    /* Make sure they share a digit sometimes (trickier) and aren't equal */
     if (Math.random() < 0.5) {
       const t = Math.floor(a / 10);
       const o = a % 10;
-      b = o * 10 + t;       /* digit-swap variant */
+      b = o * 10 + t;
     }
     while (b === a) b = rand(lo, hi);
     const askBigger = Math.random() < 0.6;
@@ -1257,13 +886,11 @@ main {
     };
   }
 
-  /* Build with workspace pre-filled — kid completes the rest */
   function genBuildPartialMode() {
     const [lo, hi] = rangeForLevel();
     const target = rand(Math.max(lo, 25), hi);
     const tTotal = Math.floor(target / 10);
     const oTotal = target % 10;
-    /* Pre-fill either some tens OR some ones (not both) — keeps it clear */
     const fillTens = Math.random() < 0.5 && tTotal >= 2;
     const preTens = fillTens ? rand(1, tTotal - 1) : 0;
     const preOnes = fillTens ? 0 : (oTotal >= 2 ? rand(1, Math.max(1, oTotal - 1)) : 0);
@@ -1277,7 +904,6 @@ main {
     };
   }
 
-  /* Generator pools keyed by level */
   const POOL_L1 = [
     { fn: genBuildMode,         weight: 60 },
     { fn: genIdentifyMode,      weight: 40 },
@@ -1300,7 +926,6 @@ main {
   function pickGenerator() {
     const lvl = currentLevel();
     const pool = lvl === 1 ? POOL_L1 : (lvl === 2 ? POOL_L2 : POOL_L3);
-    /* Avoid repeating the SAME mode twice in a row when possible */
     const lastMode = state.current ? state.current.mode : null;
     const filtered = pool.filter(g => {
       const probeMode = ({
@@ -1328,9 +953,9 @@ main {
     progress: 0,
     current: null,
     workspace: { tens: 0, ones: 0 },
-    prefill:   { tens: 0, ones: 0 },   /* locked pre-fills (buildPartial mode) */
-    locked: false,                      /* submit lock during feedback */
-    readOnly: false,                    /* full workspace read-only (identify/placevalue) */
+    prefill:   { tens: 0, ones: 0 },
+    locked: false,
+    readOnly: false,
     hintOn: false,
     busy: false,
     lastLevel: 1,
@@ -1339,43 +964,43 @@ main {
   /* ---------- DOM refs ---------- */
   const $titleEl        = document.getElementById('titleEl');
   const $progressBar    = document.getElementById('progressBar');
-  const $progressFill  = document.getElementById('progressFill');
-  const $progressText  = document.getElementById('progressText');
+  const $progressFill   = document.getElementById('progressFill');
+  const $progressText   = document.getElementById('progressText');
   const $langToggleBtn  = document.getElementById('langToggleBtn');
   const $instructionEl  = document.getElementById('instructionEl');
   const $targetNumberEl = document.getElementById('targetNumberEl');
   const $hintBtn        = document.getElementById('hintBtn');
   const $hintLabelEl    = document.getElementById('hintLabel');
-  const $tensLabelEl   = document.getElementById('tensLabel');
+  const $tensLabelEl    = document.getElementById('tensLabel');
   const $onesLabelEl    = document.getElementById('onesLabel');
   const $tensHintEl     = document.getElementById('tensHint');
   const $onesHintEl     = document.getElementById('onesHint');
-  const $tensCountEl   = document.getElementById('tensCount');
-  const $onesCountEl   = document.getElementById('onesCount');
-  const $tensAreaEl    = document.getElementById('tensArea');
-  const $onesAreaEl    = document.getElementById('onesArea');
-  const $addTensEl     = document.getElementById('addTens');
+  const $tensCountEl    = document.getElementById('tensCount');
+  const $onesCountEl    = document.getElementById('onesCount');
+  const $tensAreaEl     = document.getElementById('tensArea');
+  const $onesAreaEl     = document.getElementById('onesArea');
+  const $addTensEl      = document.getElementById('addTens');
   const $removeTensEl   = document.getElementById('removeTens');
-  const $addOnesEl     = document.getElementById('addOnes');
+  const $addOnesEl      = document.getElementById('addOnes');
   const $removeOnesEl   = document.getElementById('removeOnes');
-  const $sumTensEl     = document.getElementById('sumTens');
-  const $sumOnesEl     = document.getElementById('sumOnes');
-  const $sumTotalEl    = document.getElementById('sumTotal');
-  const $sumTensWordEl = document.getElementById('sumTensWord');
-  const $sumOnesWordEl = document.getElementById('sumOnesWord');
-  const $summaryEl     = document.getElementById('summary');
-  const $actionRowEl   = document.getElementById('actionRow');
-  const $clearBtnEl    = document.getElementById('clearBtn');
-  const $checkBtnEl    = document.getElementById('checkBtn');
-  const $mcRowEl       = document.getElementById('mcRow');
-  const $feedbackEl    = document.getElementById('feedback');
+  const $sumTensEl      = document.getElementById('sumTens');
+  const $sumOnesEl      = document.getElementById('sumOnes');
+  const $sumTotalEl     = document.getElementById('sumTotal');
+  const $sumTensWordEl  = document.getElementById('sumTensWord');
+  const $sumOnesWordEl  = document.getElementById('sumOnesWord');
+  const $summaryEl      = document.getElementById('summary');
+  const $actionRowEl    = document.getElementById('actionRow');
+  const $clearBtnEl     = document.getElementById('clearBtn');
+  const $checkBtnEl     = document.getElementById('checkBtn');
+  const $mcRowEl        = document.getElementById('mcRow');
+  const $feedbackEl     = document.getElementById('feedback');
   const $regroupToastEl = document.getElementById('regroupToast');
-  const $rewardModal   = document.getElementById('rewardModal');
-  const $rewardTitleEl = document.getElementById('rewardTitle');
-  const $rewardMsgEl   = document.getElementById('rewardMsg');
+  const $rewardModal    = document.getElementById('rewardModal');
+  const $rewardTitleEl  = document.getElementById('rewardTitle');
+  const $rewardMsgEl    = document.getElementById('rewardMsg');
   const $rewardImageWrapEl = document.getElementById('rewardImageWrap');
-  const $confettiLayerEl = document.getElementById('confettiLayer');
-  const $playAgainBtnEl = document.getElementById('playAgainBtn');
+  const $confettiLayerEl   = document.getElementById('confettiLayer');
+  const $playAgainBtnEl    = document.getElementById('playAgainBtn');
   const $workspaceEl    = document.getElementById('workspace');
   const $levelChipEl    = document.getElementById('levelChip');
   const $levelLabelEl   = document.getElementById('levelLabel');
@@ -1440,9 +1065,7 @@ main {
     $sumTotalEl.textContent  = tens * 10 + ones;
 
     const isBuildLike = state.current && (state.current.mode === 'build' || state.current.mode === 'buildPartial');
-    if (isBuildLike &&
-        (tens * 10 + ones) === state.current.target &&
-        (tens + ones) > 0) {
+    if (isBuildLike && (tens * 10 + ones) === state.current.target && (tens + ones) > 0) {
       $summaryEl.classList.add('match');
     } else {
       $summaryEl.classList.remove('match');
@@ -1486,7 +1109,6 @@ main {
 
   function clearWorkspace() {
     if (state.locked || state.busy) return;
-    /* Clear back to prefill (locked blocks stay) */
     state.workspace = {
       tens: state.prefill.tens || 0,
       ones: state.prefill.ones || 0,
@@ -1512,7 +1134,6 @@ main {
     setTimeout(() => {
       state.workspace.ones -= 10;
       state.workspace.tens += 1;
-      /* Regrouping may consume prefilled ones — clamp so removeOne stays valid */
       state.prefill.ones = Math.min(state.prefill.ones || 0, state.workspace.ones);
       renderWorkspace();
       const newRod = $tensAreaEl.lastElementChild;
@@ -1528,13 +1149,12 @@ main {
   /* ---------- Render a new question ---------- */
   function renderQuestion(q) {
     state.workspace = { tens: 0, ones: 0 };
-    state.prefill   = { tens: 0, ones: 0 };   /* pre-filled (locked) counts for buildPartial */
-    state.locked    = false;                   /* submit lock */
-    state.readOnly  = false;                   /* full workspace read-only (identify/placevalue) */
+    state.prefill   = { tens: 0, ones: 0 };
+    state.locked    = false;
+    state.readOnly  = false;
     $feedbackEl.textContent = '';
     $feedbackEl.className = 'feedback';
 
-    /* Resolve localized instruction (supports 0, 1 or 2 args) */
     let instr;
     if (q.instructionArg1 !== undefined) {
       instr = S(q.instructionKey, q.instructionArg1, q.instructionArg2);
@@ -1627,20 +1247,14 @@ main {
     if (m !== 'build' && m !== 'buildPartial') return;
     const built = state.workspace.tens * 10 + state.workspace.ones;
     const target = state.current.target;
-    if (built === target) {
-      handleCorrect(null);
-    } else {
-      handleWrong(null, target, built);
-    }
+    if (built === target) handleCorrect(null);
+    else handleWrong(null, target, built);
   }
 
   function onMCClicked(btn, value, correctValue) {
     if (state.locked || state.busy) return;
-    if (value === correctValue) {
-      handleCorrect(btn);
-    } else {
-      handleWrong(btn, correctValue, value);
-    }
+    if (value === correctValue) handleCorrect(btn);
+    else handleWrong(btn, correctValue, value);
   }
 
   function handleCorrect(btn) {
@@ -1669,9 +1283,7 @@ main {
     state.progress = Math.max(0, state.progress - DECREMENT_WRONG);
     const m = state.current.mode;
     const isBuildLike = (m === 'build' || m === 'buildPartial');
-    const msg = isBuildLike
-      ? S('wrongMsg', given, correct)
-      : S('wrongMsgMC', correct);
+    const msg = isBuildLike ? S('wrongMsg', given, correct) : S('wrongMsgMC', correct);
     $feedbackEl.textContent = msg;
     $feedbackEl.className = 'feedback bad';
     if (btn) btn.classList.add('wrong-flash');
@@ -1712,54 +1324,12 @@ main {
   }
 
   /* ---------- Reward ---------- */
-  function chooseReward() {
-    const total = REWARDS.reduce((s, r) => s + r.weight, 0);
-    let r = Math.random() * total;
-    for (const reward of REWARDS) {
-      r -= reward.weight;
-      if (r <= 0) return reward;
-    }
-    return REWARDS[0];
-  }
-
   function showReward() {
-    const reward = chooseReward();
-    $rewardImageWrapEl.innerHTML = '';
-
-    /* Preload the image. Only attach it to the DOM if it loaded
-       successfully; otherwise render the emoji fallback. This avoids
-       briefly showing the broken-image glyph alongside the fallback. */
-    const img = new Image();
-    img.alt = reward.label + ' reward';
-    img.onload = () => {
-      $rewardImageWrapEl.innerHTML = '';
-      $rewardImageWrapEl.appendChild(img);
-    };
-    img.onerror = () => {
-      $rewardImageWrapEl.innerHTML =
-        '<div class="fallback">🪙<br>' + reward.label +
-        '<br><span style="font-size:0.7rem;opacity:0.7;">' + S('rewardMissing') + '</span></div>';
-    };
-    img.src = reward.src;
-
-    spawnConfetti();
+    const reward = chooseReward(rewardStore.list);
+    mountReward($rewardImageWrapEl, reward, S('rewardMissing'));
+    spawnConfetti($confettiLayerEl);
     $rewardModal.hidden = false;
     $playAgainBtnEl.focus();
-  }
-
-  function spawnConfetti() {
-    $confettiLayerEl.innerHTML = '';
-    const colors = ['#ff5252','#ffca28','#66bb6a','#42a5f5','#ab47bc','#ff9800'];
-    for (let i = 0; i < 60; i++) {
-      const c = document.createElement('div');
-      c.className = 'confetti-piece';
-      c.style.left = Math.random() * 100 + '%';
-      c.style.background = colors[Math.floor(Math.random() * colors.length)];
-      c.style.animationDuration = (2 + Math.random() * 2) + 's';
-      c.style.animationDelay = (Math.random() * 0.6) + 's';
-      c.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
-      $confettiLayerEl.appendChild(c);
-    }
   }
 
   /* ---------- Reset ---------- */
