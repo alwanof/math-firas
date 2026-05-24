@@ -1,19 +1,130 @@
 ---
 name: create-math-game
-description: Build a new standalone HTML/CSS/JS math game for Turkish primary Grade 1 or Grade 2, using games/number_city.html as the reference implementation, following the Sunny-City-Cartoon design spirit, with EN+TR i18n and weighted-random reward modal. Use when the user asks to create, generate, build, scaffold, or "add" a math game, picks one of the 40 prompts in prompts.md, mentions a Turkish curriculum code like MAT.1.x.x or MAT.2.x.x, or asks for a new game in the games/ folder.
+description: Build a new standalone HTML/CSS/JS math game for Turkish primary Grade 1 or Grade 2, OR review/refactor/fix an existing HTML game file so it is ready for the math-firas game collection. Use when the user asks to create, generate, build, scaffold, or "add" a math game; picks one of the 40 prompts in prompts.md; mentions a Turkish curriculum code like MAT.1.x.x or MAT.2.x.x; provides an existing HTML game file to fix, review, or add to the games/ folder; or says phrases like "add this to our games", "fix the UI", "check languages", or "fix rewards".
 ---
 
-# Create Math Game
+# Create / Review Math Game
 
-Build a new math game for the **math-firas** project. Every game must (a) match the visual spirit of `@games/number_city.html`, (b) work in **English and Turkish**, (c) link `shared/mf-design.css` and `shared/mf-core.js` for all boilerplate, and (d) be registered in `@index.html` with a meaningful bilingual title.
+Every game in **math-firas** must (a) match the Sunny-City-Cartoon visual spirit of `@games/number_city.html`, (b) work in **English and Turkish**, (c) link `../shared/mf-design.css` and `../shared/mf-core.js`, and (d) be registered in `@index.html`.
+
+This skill covers **two modes**:
+
+- **Mode A — Create from scratch**: user asks for a new game by name, prompt number, or curriculum code.
+- **Mode B — Review & Refactor**: user provides an existing HTML file and asks to fix, polish, or add it to the collection.
 
 ## When to use
 
-The user asks for a new game by any of:
-- Game name from `@prompts.md` (e.g. "Number Garden", "Sky Ladder", "Pattern Lab")
+**Mode A triggers:**
+- Game name from `@prompts.md` (e.g. "Number Garden", "Sky Ladder")
 - Prompt number ("make game #7")
 - Curriculum code (`MAT.1.1.5`, `MAT.2.1.7`, …)
 - Concept ("a game about ordinal numbers", "skip counting by 5s")
+
+**Mode B triggers:**
+- User shares or references an existing `.html` file and says "add to our games", "fix languages", "check UI", "fix rewards", "review", or "make it ready"
+- Game file exists at the project root (not in `games/`) — it needs to be moved and refactored
+
+---
+
+## Mode B — Review & Refactor an existing HTML game
+
+Use this checklist every time the user hands you a standalone HTML file. Work through each item in order, fix everything, then proceed to Step 7 (register in index.html).
+
+### Refactor checklist
+
+```
+- [ ] R1. Move file to games/<kebab-slug>.html (root-level drafts are never playable)
+- [ ] R2. Add <link rel="stylesheet" href="../shared/mf-design.css"> in <head>
+- [ ] R3. Add <script src="../shared/mf-core.js"></script> before the game <script>
+- [ ] R4. Remove every inline re-definition of shared tokens / styles / functions (see "What to strip" below)
+- [ ] R5. Replace dark / custom body background with the shared peach-sky gradient (do nothing — it comes from shared CSS automatically once R2 is done)
+- [ ] R6. Add the 5 ambient layers in HTML if missing: sun, cloud-1/2/3 inside .ambient div, and .road with 3 .car children
+- [ ] R7. Add <html lang="tr"> and a lang-toggle button in the header
+- [ ] R8. Build a full STRINGS table (en + tr) — every visible string must live there
+- [ ] R9. Rename any game-specific CSS class that collides with shared classes (most common: game uses .car for its mechanic → rename to .ride-car, .frog, .block, etc.)
+- [ ] R10. Fix reward image paths: must be ../images/<file>.jpg (relative to games/) not bare images/...
+- [ ] R11. Replace local rand/pick/shuffle/chooseReward/spawnConfetti/mountReward with MF.* equivalents
+- [ ] R12. Register the game card in index.html (correct grade section, sorted by MAT code, unique color-bN tile)
+- [ ] R13. Delete the original root-level draft file
+```
+
+### What to strip from the inline `<style>` (already in shared CSS — do not redefine)
+
+| Remove these local definitions | Reason |
+|-------------------------------|--------|
+| `:root` design token block (`--ink`, `--good`, `--bad`, `--warm`, `--b1`..`--b6`, sky vars) | Lives in `shared/mf-design.css` |
+| `body { background: ... }`, `body { font-family: ... }` | Shared |
+| `.reward-modal`, `.reward-card`, `.reward-image-wrap`, `.reward-msg`, `.play-again` | Shared |
+| `.confetti-layer`, `.confetti-piece`, `@keyframes confettiFall` | Shared |
+| `.feedback`, `@keyframes bounceIn` | Shared |
+| `@keyframes correctPulse`, `@keyframes wrongShake`, `@keyframes popIn` | Shared |
+| `.progress-wrap`, `.progress-track`, `.progress-fill`, `.progress-text` | Shared |
+| `.lang-toggle` | Shared |
+| `.difficulty-badge` (base style) | Shared — only add `.medium`/`.hard` overrides locally |
+| `.sun`, `.cloud`, `.cloud-1/2/3`, `@keyframes drift` | Shared |
+| `.road`, `.car`, `@keyframes drive`, `@keyframes driveRev`, `@keyframes roadlines` | Shared |
+| `.numpad` base grid (override only width/padding locally) | Shared |
+
+### What to strip from the inline `<script>`
+
+| Remove | Replace with |
+|--------|-------------|
+| `const rand = ...` | `const { rand } = MF;` |
+| `const pick = ...` | `const { pick } = MF;` |
+| `function shuffle(...)` | `const { shuffle } = MF;` |
+| `function chooseReward(...)` | `const { chooseReward } = MF;` |
+| `function spawnConfetti(...)` | `const { spawnConfetti } = MF;` |
+| `img.onerror` + manual fallback pattern | `MF.mountReward(wrap, reward, S('rewardMissing'))` |
+| `const REWARDS = [{ src: 'images/...' }]` | `const rewardStore = MF.loadRewards();` (uses `../images/` automatically) |
+| Reward modal show/hide without focus trap | Use `MF.trapFocus` / `MF.releaseFocus` |
+
+### STRINGS minimum keys for Mode B
+
+If the original game has **no STRINGS table**, build one from scratch using the template in Mode A Step 5. If the original game is **English-only**, keep all EN strings and add the missing TR counterparts. The minimum set:
+
+```js
+const STRINGS = {
+  en: {
+    title, langToggle: 'TR', progressAria: 'Progress',
+    // one key per instruction / question type
+    praises: [...],        // 5–7 messages with emoji
+    wrongMsg: (a) => `...`,
+    rewardTitle, rewardMsg, playAgain, rewardMissing: '(reward image missing)',
+    // any difficulty labels, button labels, ARIA labels
+  },
+  tr: {
+    title, langToggle: 'EN', progressAria: 'İlerleme',
+    // same keys in Turkish
+    praises: [...],
+    wrongMsg: (a) => `...`,
+    rewardTitle, rewardMsg, playAgain, rewardMissing: '(ödül resmi eksik)',
+  },
+};
+let lang = localStorage.getItem('mf_lang') || 'tr';
+const S = (k, ...a) => { const v = STRINGS[lang][k]; return typeof v === 'function' ? v(...a) : v; };
+```
+
+### applyStaticStrings() requirements
+
+Call this on init and after every `setLang()`. It must update:
+- `document.documentElement.lang`
+- `document.title` (bilingual)
+- `titleEl.textContent`
+- `langToggleBtn.textContent`
+- All button labels: check, clear, hint, play-again, close
+- All ARIA labels: progressBar `aria-label`, gap-car `aria-label`, backspace `aria-label`
+- `rewardTitle`, `rewardMsg`, difficulty badge
+
+### Background / ambient fix
+
+Once `../shared/mf-design.css` is linked, the sunny sky gradient appears automatically. If the original game used a **dark theme** (dark `:root` vars, stars, night sky), you only need to:
+1. Delete the dark `:root` overrides and `.stars` / night-sky styles.
+2. Keep any game-specific color vars that aren't in the shared palette (e.g. skip-count colors `--skip-2` … `--skip-10`).
+3. Adjust element backgrounds that assumed a dark canvas (e.g. unlit car body from near-black → `#d4cfe8`).
+
+---
+
+## Mode A — Create from scratch
 
 ## Inputs (read these first, in order)
 
@@ -24,7 +135,7 @@ The user asks for a new game by any of:
 5. `@shared/mf-design.css` + `@shared/mf-core.js` — the shared layer that every game must link. All design tokens, ambient scene, modal, confetti, and helper functions live here.
 6. `@.cursor/rules/design-spirit.mdc`, `@.cursor/rules/game-conventions.mdc`, `@.cursor/rules/index-registry.mdc` — the binding rules.
 
-## Workflow
+### Mode A workflow
 
 ```
 Task progress:
@@ -367,6 +478,7 @@ These are real bugs that have shipped in the project. Read the full list in [`@.
 4. **Turkish unit words are `onluk` / `birlik`** (singular noun forms), not `onlar` / `birler` (plurals/pronouns). Header chips may pluralize visually (`ONLUKLAR`/`BİRLİKLER`) but inline equations use the singular form.
 5. **Don't double-id one element** (`<button id="checkBtn" id="checkLabel">`) — the second attribute is silently ignored and any `getElementById` on it returns `null`, crashing later code.
 6. **Don't overload `state.*` field names** mid-refactor (e.g. flipping `state.locked` from `boolean` to `{tens, ones}`). Add a new field name like `state.prefill` instead.
+7. **Class collision during Mode B refactor** — the shared CSS defines `.car` as the animated road-strip emoji. If the original game also uses `.car` for its interactive mechanic (e.g. roller-coaster cars, train wagons), rename the game's class to something specific (`.ride-car`, `.frog`, `.wagon`) in **both** the CSS and every `querySelector`/`createElement` call. Otherwise the shared `@keyframes drive` hijacks the game elements.
 
 When in doubt, run a quick check after writing the game:
 

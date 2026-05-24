@@ -9,6 +9,7 @@
     "number_city":      { "enabled": false },
     "base-ten-builder": { "enabled": false },
     "robot-decomposer": { "enabled": true },
-    "number-line-river": { "enabled": true }
+    "number-line-river": { "enabled": true },
+    "skip-count-carnival": { "enabled": true }
   }
 }

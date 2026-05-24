@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>Ritmik Sayma Karnavalı — 2. Sınıf Matematik</title>
+<link rel="stylesheet" href="../shared/mf-design.css">
+<style>
+/* ============================================================
+   Skip Count Carnival / Ritmik Sayma Karnavalı — Grade 2
+   Target concept: skip counting forward & backward by 2,3,4,5,10
+   Curriculum: MAT.2.1.4
+   ============================================================ */
+
+/* Game-specific color vars */
+:root {
+  --skip-2:    #00b8d9;
+  --skip-3:    #e91e8c;
+  --skip-4:    #7c4dff;
+  --skip-5:    #ffc400;
+  --skip-10:   #ff6b3d;
+  --ride-body: #d4cfe8;
+  --ride-roof: #a49cc0;
+  --track-col: #7a738c;
+}
+
+/* Ambient layer */
+.ambient { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+
+main {
+  position: relative; z-index: 2; flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.5rem;
+  padding: 0.6rem 0.75rem 100px;
+  overflow-y: auto;
+}
+
+/* ---- Header extras ---- */
+.header-end {
+  flex: 1;
+  max-width: 540px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.difficulty-badge.medium { background: var(--b4); color: #fff; }
+.difficulty-badge.hard   { background: var(--b1); color: #fff; }
+
+.hint-btn {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.28rem 0.55rem;
+  background: #fff;
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.hint-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+.hint-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.hint-btn.active { background: var(--sun); }
+
+/* ---- Prompt card ---- */
+.prompt-card {
+  width: min(820px, 96vw);
+  background: rgba(255,255,255,0.92);
+  border: 4px solid var(--ink);
+  border-radius: 16px;
+  padding: 0.55rem 1rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  text-align: center;
+  position: relative;
+}
+.prompt-card::before, .prompt-card::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  width: 16px; height: 16px;
+  background: var(--sun);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 1px 2px 0 var(--ink);
+}
+.prompt-card::before { left: -10px; }
+.prompt-card::after  { right: -10px; }
+.instruction {
+  font-size: clamp(0.9rem, 2.3vw, 1.15rem);
+  font-weight: 800;
+  color: var(--ink);
+}
+.skip-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 0.15rem 0.55rem;
+  margin-top: 0.2rem;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.95);
+  color: var(--ink);
+}
+.skip-tag .dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+}
+
+/* ---- Ride track ---- */
+.ride-container {
+  width: min(820px, 96vw);
+  background: rgba(255,255,255,0.65);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  padding: 1rem 0.75rem 0.8rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+/* Chase lights top */
+.ride-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6px;
+  background: repeating-linear-gradient(90deg, var(--sun) 0 10px, var(--ink) 10px 20px);
+  animation: chaseLights 0.8s linear infinite;
+}
+/* Chase lights bottom */
+.ride-container::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 6px;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 10px, var(--sun) 10px 20px);
+  animation: chaseLights 0.8s linear infinite reverse;
+}
+@keyframes chaseLights {
+  0%   { background-position: 0 0; }
+  100% { background-position: 20px 0; }
+}
+
+.track-line {
+  position: absolute;
+  top: 50%; left: 4%; right: 4%;
+  height: 4px;
+  background: var(--track-col);
+  border-radius: 2px;
+  transform: translateY(50%);
+  z-index: 1;
+}
+.track-line::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 6px, rgba(255,255,255,0.45) 6px 9px);
+}
+
+/* Ride-car row */
+.ride-cars {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  min-height: 90px;
+}
+
+/* Individual ride car */
+.ride-car {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: var(--ride-body);
+  color: var(--ink-soft);
+  font-size: 1.4rem;
+  font-weight: 900;
+  cursor: default;
+  transition: transform 0.2s ease;
+  box-shadow: 0 3px 0 var(--ink);
+}
+/* Wheels */
+.ride-car::before, .ride-car::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  width: 14px; height: 14px;
+  background: var(--ink);
+  border: 2px solid var(--ink-soft);
+  border-radius: 50%;
+}
+.ride-car::before { left: 6px; }
+.ride-car::after  { right: 6px; }
+
+/* Roof strip */
+.ride-car-roof {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 8px;
+  border: 2px solid var(--ink);
+  border-radius: 6px 6px 0 0;
+  background: var(--ride-roof);
+}
+
+/* Lit car */
+.ride-car.lit {
+  background: var(--skip-color, var(--b2));
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--ink), 0 0 14px var(--skip-color, var(--b2));
+  animation: litPulse 1.8s ease-in-out infinite;
+}
+.ride-car.lit .ride-car-roof {
+  background: var(--skip-color, var(--b2));
+  filter: brightness(0.72);
+}
+@keyframes litPulse {
+  0%, 100% { box-shadow: 0 3px 0 var(--ink), 0 0 14px var(--skip-color, var(--b2)); }
+  50%       { box-shadow: 0 3px 0 var(--ink), 0 0 28px var(--skip-color, var(--b2)); }
+}
+
+/* Gap car */
+.ride-car.gap {
+  background: rgba(255,255,255,0.88);
+  color: var(--ink-soft);
+  border-style: dashed;
+  cursor: pointer;
+  animation: gapPulse 1.5s ease-in-out infinite;
+}
+.ride-car.gap.active {
+  background: var(--sun);
+  color: var(--ink);
+  border-style: solid;
+  animation: activeGap 0.8s ease-in-out infinite;
+  box-shadow: 0 3px 0 var(--ink), 0 0 18px var(--sun);
+}
+.ride-car.gap.user-typing {
+  background: var(--sun);
+  color: var(--ink);
+  border-style: solid;
+}
+@keyframes gapPulse {
+  0%, 100% { transform: scale(1);    border-color: var(--ink-soft); }
+  50%      { transform: scale(1.05); border-color: var(--warm); }
+}
+@keyframes activeGap {
+  0%, 100% { transform: scale(1.08); }
+  50%      { transform: scale(1.15); }
+}
+.ride-car.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; color: #fff; }
+.ride-car.wrong-flash   { animation: wrongShake  0.5s ease;  background: var(--bad)  !important; color: #fff; }
+
+/* Sequence arrows */
+.seq-arrow {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--warm);
+  display: inline-flex;
+  align-items: center;
+  text-shadow: 2px 2px 0 var(--ink);
+  z-index: 2;
+}
+
+/* ---- Numpad area ---- */
+.numpad-area {
+  width: min(360px, 95vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+}
+.numpad-hint {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: rgba(255,255,255,0.88);
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  text-align: center;
+}
+/* Override shared numpad width */
+.numpad { width: 100%; }
+.numpad button { font-size: 1.4rem; padding: 0.55rem 0; }
+.numpad button.action { background: var(--warm); color: #fff; }
+.numpad button.submit { background: var(--good);  color: #fff; }
+
+/* Action row */
+.action-row {
+  width: min(360px, 95vw);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.action-btn {
+  font-family: inherit;
+  font-weight: 900;
+  font-size: clamp(0.9rem, 2.3vw, 1.05rem);
+  padding: 0.55rem 1.1rem;
+  border: 4px solid var(--ink);
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.action-btn.check  { background: var(--good); color: #fff; flex: 2; min-width: 120px; }
+.action-btn.clear  { background: #fff;        color: var(--ink); flex: 1; min-width: 90px; }
+.action-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.action-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.action-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* ---- Multiple-choice row ---- */
+.mc-row {
+  width: min(820px, 96vw);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.mc-btn {
+  flex: 1 1 110px;
+  max-width: 190px;
+  min-height: 70px;
+  font-family: inherit;
+  font-size: clamp(1.2rem, 3.4vw, 1.7rem);
+  font-weight: 900;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  padding: 0.5rem 0.7rem;
+  color: var(--ink);
+}
+.mc-btn:nth-child(1) { background: var(--b4); color: #fff; }
+.mc-btn:nth-child(2) { background: var(--b2); color: var(--ink); }
+.mc-btn:nth-child(3) { background: var(--b5); color: #fff; }
+.mc-btn:nth-child(4) { background: var(--b6); color: var(--ink); }
+.mc-btn:hover  { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+.mc-btn:active { transform: translate(2px, 2px);   box-shadow: 2px 2px 0 var(--ink); }
+.mc-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.mc-btn.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; color: #fff; }
+.mc-btn.wrong-flash   { animation: wrongShake  0.5s ease;  background: var(--bad)  !important; color: #fff; }
+
+/* ---- 100-Chart overlay ---- */
+.chart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(31,29,44,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+  padding: 1rem;
+  backdrop-filter: blur(3px);
+}
+.chart-panel {
+  background: #fff;
+  border: 5px solid var(--ink);
+  border-radius: 16px;
+  padding: 0.75rem;
+  box-shadow: 8px 8px 0 var(--ink);
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow: auto;
+  text-align: center;
+}
+.chart-title {
+  font-weight: 900;
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+  color: var(--ink);
+}
+.chart-legend {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+}
+.hundred-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+  width: min(420px, 90vw);
+  margin: 0 auto;
+}
+.hcell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  font-size: clamp(0.65rem, 2vw, 0.85rem);
+  font-weight: 700;
+  color: var(--ink);
+}
+.hcell.skip {
+  background: var(--skip-color, var(--b2));
+  font-weight: 900;
+  animation: cellGlow 2s ease-in-out infinite;
+}
+@keyframes cellGlow {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.18); }
+}
+.hcell.current-target {
+  background: var(--good);
+  color: #fff;
+  font-weight: 900;
+  transform: scale(1.05);
+}
+.close-chart {
+  margin-top: 0.6rem;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 1rem;
+  padding: 0.5rem 1.5rem;
+  background: var(--warm);
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 3px 3px 0 var(--ink);
+  cursor: pointer;
+}
+.close-chart:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.close-chart:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+/* ---- Mobile tweaks ---- */
+@media (max-width: 560px) {
+  .ride-car { width: 48px; height: 48px; font-size: 1rem; border-radius: 8px; }
+  .ride-car::before, .ride-car::after { width: 10px; height: 10px; bottom: -6px; }
+  .ride-car-roof { height: 6px; top: -6px; }
+  .seq-arrow { font-size: 0.95rem; }
+  .numpad-area { width: 95vw; }
+  .header-end { max-width: none; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Ambient background layers -->
+  <div class="ambient" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+  </div>
+  <div class="road" aria-hidden="true">
+    <div class="car car-1">🎠</div>
+    <div class="car car-2">🎡</div>
+    <div class="car car-3">🎢</div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="title" id="titleEl">🎪 Ritmik Sayma Karnavalı</div>
+    <div class="header-end">
+      <span class="difficulty-badge" id="difficultyBadge">Kolay</span>
+      <button class="hint-btn" id="hintBtn" type="button">💡 100-Tablo</button>
+      <div class="progress-wrap" role="progressbar"
+           aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"
+           aria-label="İlerleme" id="progressBar">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 / 10</div>
+      </div>
+      <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
+    </div>
+  </header>
+
+  <!-- Main game area -->
+  <main>
+
+    <!-- Prompt -->
+    <section class="prompt-card">
+      <div class="instruction" id="instruction"></div>
+      <div id="skipTagWrap"></div>
+    </section>
+
+    <!-- Ride track -->
+    <section class="ride-container" id="rideContainer">
+      <div class="track-line"></div>
+      <div class="ride-cars" id="carsRow"></div>
+    </section>
+
+    <!-- Numpad (fill modes) -->
+    <div class="numpad-area" id="numpadArea" hidden>
+      <div class="numpad-hint" id="numpadHint"></div>
+      <div class="numpad" id="numpad">
+        <button type="button" data-key="1">1</button>
+        <button type="button" data-key="2">2</button>
+        <button type="button" data-key="3">3</button>
+        <button type="button" data-key="4">4</button>
+        <button type="button" data-key="5">5</button>
+        <button type="button" data-key="6">6</button>
+        <button type="button" data-key="7">7</button>
+        <button type="button" data-key="8">8</button>
+        <button type="button" data-key="9">9</button>
+        <button type="button" class="action" data-key="back" id="backspaceBtn">⌫</button>
+        <button type="button" data-key="0">0</button>
+        <button type="button" class="submit" data-key="enter" id="enterBtn">↵</button>
+      </div>
+      <div class="action-row">
+        <button class="action-btn clear" id="clearBtn" type="button">🧹 Temizle</button>
+        <button class="action-btn check" id="checkBtn" type="button">✓ Kontrol</button>
+      </div>
+    </div>
+
+    <!-- Multiple-choice row -->
+    <div class="mc-row" id="mcRow" hidden></div>
+
+    <!-- Feedback -->
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+
+  </main>
+
+  <!-- 100-Chart overlay -->
+  <div class="chart-overlay" id="chartOverlay" hidden
+       role="dialog" aria-modal="true" aria-labelledby="chartTitle">
+    <div class="chart-panel">
+      <div class="chart-title" id="chartTitle">100-Tablo</div>
+      <div class="chart-legend" id="chartLegend"></div>
+      <div class="hundred-grid" id="hundredGrid"></div>
+      <button class="close-chart" type="button" id="closeChartBtn">Kapat</button>
+    </div>
+  </div>
+
+  <!-- Reward modal -->
+  <div class="reward-modal" id="rewardModal" hidden
+       role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <div class="reward-card">
+      <h2 id="rewardTitle">🎉 Karnaval Şampiyonu! 🎉</h2>
+      <div class="reward-image-wrap" id="rewardImageWrap"></div>
+      <p class="reward-msg" id="rewardMsg">Harika ritmik sayma, tren kondüktörü!</p>
+      <button class="play-again" id="playAgainBtn" type="button">Tekrar Oyna</button>
+    </div>
+  </div>
+
+</div>
+<script src="../shared/mf-core.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const { rand, pick, shuffle, loadRewards, chooseReward, mountReward,
+          spawnConfetti, trapFocus, releaseFocus } = MF;
+
+  /* ---------- Config ---------- */
+  const TARGET_PROGRESS = 10;
+  const INCREMENT_RIGHT = 1;
+  const DECREMENT_WRONG = 1;
+  const FEEDBACK_DELAY  = 1300;
+  const DIFFICULTY = { medium: 3, hard: 6 };
+
+  /* ---------- Skip-size colors ---------- */
+  const SKIP_CSS = {
+    2: 'var(--skip-2)', 3: 'var(--skip-3)', 4: 'var(--skip-4)',
+    5: 'var(--skip-5)', 10: 'var(--skip-10)',
+  };
+  const SKIP_HEX = {
+    2: '#00b8d9', 3: '#e91e8c', 4: '#7c4dff', 5: '#ffc400', 10: '#ff6b3d',
+  };
+
+  /* Turkish suffix lookup for skip labels */
+  const TR_SKIP = { 2:"2'şer", 3:"3'er", 4:"4'er", 5:"5'er", 10:"10'ar" };
+
+  /* ---------- Bilingual strings ---------- */
+  const STRINGS = {
+    en: {
+      title:         '🎪 Skip Count Carnival',
+      diffEasy:      'Easy',
+      diffMedium:    'Medium',
+      diffHard:      'Hard',
+      hintBtn:       '💡 100-Chart',
+      hintBtnAria:   'Open 100-chart hint',
+      langToggle:    'TR',
+      progressAria:  'Progress',
+
+      instrFillFwd:    'Fill in the missing car!',
+      instrFillBwd:    'Backward counting! Fill the gap.',
+      instrFillBoth:   'Fill BOTH missing cars!',
+      instrFillTricky: '🔥 TRICKY! Fill the gap (non-multiple start).',
+      instrNext:       'What number comes NEXT?',
+      instrBefore:     'What number came BEFORE?',
+      instrSkip:       'What is the SKIP SIZE between cars?',
+
+      skipForward:  (n) => `Skip by ${n} → forward`,
+      skipBackward: (n) => `Skip by ${n} ← backward`,
+      skipUnknown:  '? ←→ ?',
+
+      gapAria:    'Empty car, tap to fill',
+      singleHint: 'Type the missing number, then ↵',
+      multiHint:  (active, filled, total) => `Active: car #${active} — ${filled}/${total} filled`,
+      fillFirst:  '🎪 Fill all the ? cars first!',
+
+      checkBtn:      '✓ Check',
+      clearBtn:      '🧹 Clear',
+      backspaceAria: 'Backspace',
+      enterAria:     'Next gap or check',
+
+      chartTitleIdentify:  '100-Chart',
+      chartLegendIdentify: 'Count between cars in the sequence!',
+      chartTitleSkip:      (n, dir) => `Skip by ${n} ${dir === 1 ? '→' : '←'}`,
+      chartLegendSkip:     (n) => `Colored cells = skip-by-${n} pattern. Green = in this question.`,
+      closeChart:          'Close',
+
+      praiseFillGap:  ['🎪 Spot on!', '⭐ Perfect skip!', '✨ All cars lit!', '🎢 Carnival champ!', '👏 Brilliant!'],
+      praiseMC:       ['🎪 Yes!', '⭐ Right answer!', '✨ Next stop perfect!', '🎢 Conductor approves!', '🌟 Sharp!'],
+      praiseIdentify: ['🎪 Skip found!', '⭐ Pattern detected!', '✨ Math detective!', '🎢 Skip pro!', '🌟 Brilliant!'],
+
+      wrongFill:     (s) => `🎪 The answer was ${s}. Keep going!`,
+      wrongTricky:   (s, n) => `🎪 Tricky! Answer: ${s}. The pattern still adds ${n}.`,
+      wrongMC:       (s) => `🎪 The answer was ${s}. Try the next ride!`,
+      wrongIdentify: (s) => `🎪 The skip was ${s}. Subtract two cars to check!`,
+
+      rewardTitle:   '🎉 Carnival Champion! 🎉',
+      rewardMsg:     'Amazing skip counting, ride conductor!',
+      playAgain:     'Play Again',
+      rewardMissing: '(reward image missing)',
+    },
+    tr: {
+      title:         '🎪 Ritmik Sayma Karnavalı',
+      diffEasy:      'Kolay',
+      diffMedium:    'Orta',
+      diffHard:      'Zor',
+      hintBtn:       '💡 100-Tablo',
+      hintBtnAria:   '100-tablo ipucunu aç',
+      langToggle:    'EN',
+      progressAria:  'İlerleme',
+
+      instrFillFwd:    'Eksik arabayı doldur!',
+      instrFillBwd:    'Geri sayma! Boşluğu doldur.',
+      instrFillBoth:   'İKİ eksik arabayı da doldur!',
+      instrFillTricky: '🔥 ZOR! Boşluğu doldur (katlardan başlamıyor).',
+      instrNext:       'Sıradaki sayı ne?',
+      instrBefore:     'Önceki sayı neydi?',
+      instrSkip:       'Arabalar arasındaki sıçrama kaç?',
+
+      skipForward:  (n) => `${TR_SKIP[n] || n+"'er"} → ileri`,
+      skipBackward: (n) => `${TR_SKIP[n] || n+"'er"} ← geri`,
+      skipUnknown:  '? ←→ ?',
+
+      gapAria:    'Boş araba, doldurmak için dokun',
+      singleHint: 'Eksik sayıyı yaz, sonra ↵',
+      multiHint:  (active, filled, total) => `Aktif: araba #${active} — ${filled}/${total} dolduruldu`,
+      fillFirst:  '🎪 Önce tüm ? arabaları doldur!',
+
+      checkBtn:      '✓ Kontrol',
+      clearBtn:      '🧹 Temizle',
+      backspaceAria: 'Geri sil',
+      enterAria:     'Sonraki boşluk veya kontrol et',
+
+      chartTitleIdentify:  '100-Tablo',
+      chartLegendIdentify: 'Arabalar arasındaki sayıyı tabloda bul!',
+      chartTitleSkip:      (n, dir) => `${TR_SKIP[n] || n+"'er"} ${dir === 1 ? '→' : '←'}`,
+      chartLegendSkip:     (n) => `Renkli hücreler = ${TR_SKIP[n] || n+"'er"} sayma örüntüsü. Yeşil = bu soruda.`,
+      closeChart:          'Kapat',
+
+      praiseFillGap:  ['🎪 Tam isabet!', '⭐ Mükemmel atlama!', '✨ Tüm arabalar yandı!', '🎢 Karnaval şampiyonu!', '👏 Harika!'],
+      praiseMC:       ['🎪 Evet!', '⭐ Doğru cevap!', '✨ Harika!', '🎢 Kondüktör onayladı!', '🌟 Süper!'],
+      praiseIdentify: ['🎪 Sıçrama bulundu!', '⭐ Örüntü keşfedildi!', '✨ Matematik dedektifi!', '🎢 Sıçrama ustası!', '🌟 Süper!'],
+
+      wrongFill:     (s) => `🎪 Cevap ${s} idi. Devam et!`,
+      wrongTricky:   (s, n) => `🎪 Zor! Cevap: ${s}. Örüntü yine ${n} artıyor.`,
+      wrongMC:       (s) => `🎪 Cevap ${s} idi. Sonraki tura hazır ol!`,
+      wrongIdentify: (s) => `🎪 Sıçrama ${s} idi. İki arabayı çıkar, kontrol et!`,
+
+      rewardTitle:   '🎉 Karnaval Şampiyonu! 🎉',
+      rewardMsg:     'Harika ritmik sayma, tren kondüktörü!',
+      playAgain:     'Tekrar Oyna',
+      rewardMissing: '(ödül resmi eksik)',
+    },
+  };
+
+  /* ---------- i18n ---------- */
+  let lang = localStorage.getItem('mf_lang') || 'tr';
+  const S = (k, ...a) => {
+    const v = STRINGS[lang][k];
+    return typeof v === 'function' ? v(...a) : v;
+  };
+
+  const rewardStore = loadRewards();
+
+  /* ---------- DOM refs ---------- */
+  const $titleEl       = document.getElementById('titleEl');
+  const $instruction   = document.getElementById('instruction');
+  const $skipTagWrap   = document.getElementById('skipTagWrap');
+  const $carsRow       = document.getElementById('carsRow');
+  const $numpadArea    = document.getElementById('numpadArea');
+  const $numpad        = document.getElementById('numpad');
+  const $numpadHint    = document.getElementById('numpadHint');
+  const $checkBtn      = document.getElementById('checkBtn');
+  const $clearBtn      = document.getElementById('clearBtn');
+  const $backspaceBtn  = document.getElementById('backspaceBtn');
+  const $enterBtn      = document.getElementById('enterBtn');
+  const $mcRow         = document.getElementById('mcRow');
+  const $feedback      = document.getElementById('feedback');
+  const $hintBtn       = document.getElementById('hintBtn');
+  const $progressFill  = document.getElementById('progressFill');
+  const $progressText  = document.getElementById('progressText');
+  const $progressBar   = document.getElementById('progressBar');
+  const $diffBadge     = document.getElementById('difficultyBadge');
+  const $chartOverlay  = document.getElementById('chartOverlay');
+  const $chartTitle    = document.getElementById('chartTitle');
+  const $chartLegend   = document.getElementById('chartLegend');
+  const $hundredGrid   = document.getElementById('hundredGrid');
+  const $closeChartBtn = document.getElementById('closeChartBtn');
+  const $rewardModal   = document.getElementById('rewardModal');
+  const $rewardTitle   = document.getElementById('rewardTitle');
+  const $rewardMsg     = document.getElementById('rewardMsg');
+  const $rewardImgWrap = document.getElementById('rewardImageWrap');
+  const $confetti      = document.getElementById('confettiLayer');
+  const $playAgainBtn  = document.getElementById('playAgainBtn');
+  const $langToggleBtn = document.getElementById('langToggleBtn');
+
+  /* ---------- Apply all static strings ---------- */
+  function applyStaticStrings() {
+    document.documentElement.lang = lang;
+    document.title = lang === 'tr'
+      ? 'Ritmik Sayma Karnavalı — 2. Sınıf Matematik'
+      : 'Skip Count Carnival — Grade 2 Math';
+    $titleEl.textContent       = S('title');
+    $langToggleBtn.textContent = S('langToggle');
+    $hintBtn.textContent       = S('hintBtn');
+    $hintBtn.setAttribute('aria-label', S('hintBtnAria'));
+    $checkBtn.textContent      = S('checkBtn');
+    $clearBtn.textContent      = S('clearBtn');
+    $backspaceBtn.setAttribute('aria-label', S('backspaceAria'));
+    $enterBtn.setAttribute('aria-label',     S('enterAria'));
+    $closeChartBtn.textContent = S('closeChart');
+    $rewardTitle.textContent   = S('rewardTitle');
+    $rewardMsg.textContent     = S('rewardMsg');
+    $playAgainBtn.textContent  = S('playAgain');
+    $progressBar.setAttribute('aria-label', S('progressAria'));
+    updateDiffBadge();
+  }
+
+  function setLang(next) {
+    lang = next;
+    localStorage.setItem('mf_lang', lang);
+    applyStaticStrings();
+    if (state.current) renderQuestion(state.current);
+  }
+
+  /* ---------- Progress / difficulty ---------- */
+  function diffLabel(p) {
+    if (p < DIFFICULTY.medium) return { text: S('diffEasy'),   cls: '' };
+    if (p < DIFFICULTY.hard)   return { text: S('diffMedium'), cls: 'medium' };
+    return { text: S('diffHard'), cls: 'hard' };
+  }
+  function updateDiffBadge() {
+    const d = diffLabel(state.progress);
+    $diffBadge.textContent = d.text;
+    $diffBadge.className   = 'difficulty-badge ' + d.cls;
+  }
+  function updateProgress() {
+    const pct = (state.progress / TARGET_PROGRESS) * 100;
+    $progressFill.style.width = pct + '%';
+    $progressText.textContent = state.progress + ' / ' + TARGET_PROGRESS;
+    $progressBar.setAttribute('aria-valuenow', String(state.progress));
+    updateDiffBadge();
+  }
+
+  /* ---------- Game state ---------- */
+  const state = {
+    progress:     0,
+    current:      null,
+    locked:       false,
+    gapInputs:    {},
+    activeGapIdx: null,
+  };
+
+  /* =====================================================
+     QUESTION GENERATORS
+     ===================================================== */
+
+  function buildSequence(start, skip, len, direction) {
+    const seq = [];
+    for (let i = 0; i < len; i++) seq.push(start + direction * skip * i);
+    return seq;
+  }
+
+  function pickForwardStart(skip, len, allowNonMultiple) {
+    const maxStart = 99 - skip * (len - 1);
+    if (maxStart < 1) return null;
+    if (allowNonMultiple) return rand(1, maxStart);
+    const maxMult = Math.floor(maxStart / skip);
+    const k = rand(0, maxMult);
+    return Math.max(skip, k * skip);
+  }
+  function pickBackwardStart(skip, len, allowNonMultiple) {
+    const minStart = 1 + skip * (len - 1);
+    if (minStart > 99) return null;
+    if (allowNonMultiple) return rand(minStart, 99);
+    const minMult = Math.ceil(minStart / skip);
+    const maxMult = Math.floor(99 / skip);
+    if (minMult > maxMult) return null;
+    return rand(minMult, maxMult) * skip;
+  }
+
+  function genSingleGapForward() {
+    const skip = pick([2, 5, 10]);
+    const start = pickForwardStart(skip, 5, false);
+    if (start === null) return genSingleGapForward();
+    const seq = buildSequence(start, skip, 5, 1);
+    return { type:'fillGap', sequence:seq, gaps:[rand(1,3)], direction:1, skip, instrKey:'instrFillFwd' };
+  }
+  function genSingleGapBackward() {
+    const skip = pick([2, 5, 10]);
+    const start = pickBackwardStart(skip, 5, false);
+    if (start === null) return genSingleGapBackward();
+    const seq = buildSequence(start, skip, 5, -1);
+    return { type:'fillGap', sequence:seq, gaps:[rand(1,3)], direction:-1, skip, instrKey:'instrFillBwd' };
+  }
+  function genWhatNext() {
+    const skip = pick([2, 3, 4, 5, 10]);
+    const start = pickForwardStart(skip, 5, false);
+    if (start === null) return genWhatNext();
+    const seq = buildSequence(start, skip, 4, 1);
+    const correct = seq[3] + skip;
+    if (correct > 99) return genWhatNext();
+    const ds = new Set();
+    if (skip > 1) ds.add(seq[3] + (skip - 1));
+    ds.add(seq[3] + (skip + 1)); ds.add(seq[3] + 1); ds.add(seq[3] + 2);
+    ds.delete(correct);
+    const dl = shuffle([...ds].filter(d => d > 0 && d <= 99)).slice(0, 3);
+    while (dl.length < 3) {
+      const r = correct + rand(-5, 5);
+      if (r !== correct && r > 0 && r <= 99 && !dl.includes(r)) dl.push(r);
+    }
+    return { type:'mc', sequence:seq, questionMark:'end', direction:1, skip, correct, choices:shuffle([correct,...dl]), instrKey:'instrNext' };
+  }
+  function genWhatBefore() {
+    const skip = pick([2, 3, 4, 5, 10]);
+    const start = pickForwardStart(skip, 5, false);
+    if (start === null) return genWhatBefore();
+    const seq = buildSequence(start + skip, skip, 4, 1);
+    const correct = start;
+    if (correct < 1) return genWhatBefore();
+    const ds = new Set();
+    if (skip > 1) ds.add(seq[0] - (skip - 1));
+    ds.add(seq[0] - (skip + 1)); ds.add(seq[0] - 1); ds.add(seq[0] - 2);
+    ds.delete(correct);
+    const dl = shuffle([...ds].filter(d => d > 0 && d <= 99)).slice(0, 3);
+    while (dl.length < 3) {
+      const r = correct + rand(-5, 5);
+      if (r !== correct && r > 0 && r <= 99 && !dl.includes(r)) dl.push(r);
+    }
+    return { type:'mc', sequence:seq, questionMark:'start', direction:1, skip, correct, choices:shuffle([correct,...dl]), instrKey:'instrBefore' };
+  }
+  function genIdentifySkip() {
+    const skip = pick([2, 3, 4, 5, 10]);
+    const start = pickForwardStart(skip, 4, Math.random() < 0.4);
+    if (start === null) return genIdentifySkip();
+    const seq = buildSequence(start, skip, 4, 1);
+    const ds = shuffle([2,3,4,5,10].filter(s => s !== skip)).slice(0, 3);
+    return { type:'identifySkip', sequence:seq, direction:1, skip, correct:skip, choices:shuffle([skip,...ds]), instrKey:'instrSkip' };
+  }
+  function genMultiGap() {
+    const skip = pick([2, 3, 4, 5, 10]);
+    const dir  = pick([1, -1]);
+    const start = dir === 1 ? pickForwardStart(skip, 5, false) : pickBackwardStart(skip, 5, false);
+    if (start === null) return genMultiGap();
+    const seq = buildSequence(start, skip, 5, dir);
+    const cands = [1, 2, 3];
+    const g1 = pick(cands);
+    const g2 = pick(cands.filter(i => i !== g1));
+    return { type:'fillGap', sequence:seq, gaps:[g1,g2].sort((a,b)=>a-b), direction:dir, skip, instrKey:'instrFillBoth' };
+  }
+  function genNonMultipleStart() {
+    const skip = pick([2, 3, 4, 5]);
+    let start = pickForwardStart(skip, 5, true);
+    if (start === null) return genNonMultipleStart();
+    if (skip > 1 && start % skip === 0) {
+      start = start + 1;
+      if (start + skip * 4 > 99) { start -= 2; if (start < 1) return genNonMultipleStart(); }
+    }
+    const seq = buildSequence(start, skip, 5, 1);
+    if (seq[4] > 99 || seq[0] < 1) return genNonMultipleStart();
+    return { type:'fillGap', sequence:seq, gaps:[rand(1,3)], direction:1, skip, nonMultiple:true, instrKey:'instrFillTricky' };
+  }
+
+  function pickGenerator(progress) {
+    let pool;
+    if (progress < DIFFICULTY.medium) {
+      pool = [{ fn:genSingleGapForward, weight:60 }, { fn:genWhatNext, weight:40 }];
+    } else if (progress < DIFFICULTY.hard) {
+      pool = [
+        { fn:genSingleGapForward,  weight:22 }, { fn:genSingleGapBackward, weight:22 },
+        { fn:genWhatNext,          weight:18 }, { fn:genWhatBefore,        weight:18 },
+        { fn:genIdentifySkip,      weight:20 },
+      ];
+    } else {
+      pool = [
+        { fn:genSingleGapBackward, weight:12 }, { fn:genWhatNext,         weight:10 },
+        { fn:genWhatBefore,        weight:12 }, { fn:genIdentifySkip,     weight:20 },
+        { fn:genMultiGap,          weight:23 }, { fn:genNonMultipleStart, weight:23 },
+      ];
+    }
+    const total = pool.reduce((s, g) => s + g.weight, 0);
+    let r = Math.random() * total;
+    for (const g of pool) { r -= g.weight; if (r <= 0) return g.fn; }
+    return pool[0].fn;
+  }
+
+  /* ---------- Render question ---------- */
+  function renderQuestion(q) {
+    state.locked      = false;
+    state.gapInputs   = {};
+    state.activeGapIdx = null;
+    $feedback.textContent = '';
+    $feedback.className   = 'feedback';
+    $instruction.textContent = S(q.instrKey);
+
+    // Skip-tag badge
+    if (q.type === 'identifySkip') {
+      $skipTagWrap.innerHTML =
+        '<span class="skip-tag"><span class="dot" style="background:#bbb"></span>' +
+        '<span>' + S('skipUnknown') + '</span></span>';
+    } else {
+      const dot     = `<span class="dot" style="background:${SKIP_HEX[q.skip]}"></span>`;
+      const tagText = q.direction === 1 ? S('skipForward', q.skip) : S('skipBackward', q.skip);
+      $skipTagWrap.innerHTML = `<span class="skip-tag">${dot}<span>${tagText}</span></span>`;
+    }
+
+    $carsRow.innerHTML = '';
+    $mcRow.innerHTML   = '';
+    $numpadArea.hidden = true;
+    $mcRow.hidden      = true;
+
+    const skipColor = SKIP_CSS[q.skip] || SKIP_CSS[5];
+
+    if (q.type === 'fillGap') {
+      q.sequence.forEach((val, i) => {
+        if (i > 0) $carsRow.appendChild(makeArrow(q.direction));
+        const isGap = q.gaps.includes(i);
+        $carsRow.appendChild(makeRideCar({
+          isGap, value: isGap ? '?' : val, skipColor, gapIdx: isGap ? i : null,
+        }));
+      });
+      $numpadArea.hidden = false;
+      setActiveGap(q.gaps[0]);
+      updateNumpadHint();
+    } else {
+      if (q.type === 'mc' && q.questionMark === 'start') {
+        $carsRow.appendChild(makeRideCar({ isGap:true, value:'?', skipColor, gapIdx:null }));
+        $carsRow.appendChild(makeArrow(q.direction));
+      }
+      q.sequence.forEach((val, i) => {
+        if (i > 0) $carsRow.appendChild(makeArrow(q.direction));
+        $carsRow.appendChild(makeRideCar({ isGap:false, value:val, skipColor, gapIdx:null }));
+      });
+      if (q.type === 'mc' && q.questionMark === 'end') {
+        $carsRow.appendChild(makeArrow(q.direction));
+        $carsRow.appendChild(makeRideCar({ isGap:true, value:'?', skipColor, gapIdx:null }));
+      }
+      $mcRow.hidden = false;
+      q.choices.forEach(c => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mc-btn';
+        btn.textContent = String(c);
+        btn.dataset.value = String(c);
+        btn.addEventListener('click', () => onMCClicked(btn, c, q.correct));
+        $mcRow.appendChild(btn);
+      });
+    }
+  }
+
+  function makeArrow(direction) {
+    const el = document.createElement('span');
+    el.className = 'seq-arrow';
+    el.setAttribute('aria-hidden', 'true');
+    el.textContent = direction === 1 ? '→' : '←';
+    return el;
+  }
+
+  function makeRideCar({ isGap, value, skipColor, gapIdx }) {
+    const car = document.createElement('div');
+    car.className = 'ride-car';
+    if (isGap) {
+      car.classList.add('gap');
+      if (gapIdx !== null) car.dataset.gap = String(gapIdx);
+      car.tabIndex = 0;
+      car.setAttribute('role', 'button');
+      car.setAttribute('aria-label', S('gapAria'));
+      car.textContent = '?';
+      if (gapIdx !== null) {
+        car.addEventListener('click', () => setActiveGap(gapIdx));
+        car.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveGap(gapIdx); }
+        });
+      }
+    } else {
+      car.classList.add('lit');
+      car.style.setProperty('--skip-color', skipColor);
+      car.textContent = String(value);
+    }
+    const roof = document.createElement('div');
+    roof.className = 'ride-car-roof';
+    car.appendChild(roof);
+    return car;
+  }
+
+  /* ---------- Gap input / numpad ---------- */
+  function setActiveGap(gapIdx) {
+    if (state.locked || !state.current || state.current.type !== 'fillGap') return;
+    state.activeGapIdx = gapIdx;
+    [...$carsRow.querySelectorAll('.ride-car.gap')].forEach(c => {
+      if (parseInt(c.dataset.gap, 10) === gapIdx) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+    updateNumpadHint();
+  }
+
+  function updateNumpadHint() {
+    if (!state.current || state.current.type !== 'fillGap') return;
+    const total  = state.current.gaps.length;
+    const filled = state.current.gaps.filter(g => state.gapInputs[g] !== undefined).length;
+    $numpadHint.textContent = total > 1
+      ? S('multiHint', (state.activeGapIdx || 0) + 1, filled, total)
+      : S('singleHint');
+  }
+
+  function onNumpadKey(key) {
+    if (state.locked || !state.current || state.current.type !== 'fillGap') return;
+    if (state.activeGapIdx === null) {
+      const unfilled = state.current.gaps.find(g => state.gapInputs[g] === undefined);
+      if (unfilled !== undefined) setActiveGap(unfilled);
+      else return;
+    }
+    const idx = state.activeGapIdx;
+    let current = state.gapInputs[idx] || '';
+
+    if (key === 'back') {
+      current = current.slice(0, -1);
+    } else if (key === 'enter') {
+      const next = state.current.gaps.find(g => g !== idx && state.gapInputs[g] === undefined);
+      if (next !== undefined) { setActiveGap(next); return; }
+      else { onCheckClicked(); return; }
+    } else {
+      if (current.length >= 3) return;
+      const num = parseInt(current + key, 10);
+      if (num > 100) return;
+      current = String(num);
+    }
+    state.gapInputs[idx] = current;
+    renderGapValue(idx, current);
+    updateNumpadHint();
+  }
+
+  function renderGapValue(idx, valStr) {
+    const car = [...$carsRow.querySelectorAll('.ride-car.gap')]
+      .find(c => parseInt(c.dataset.gap, 10) === idx);
+    if (!car) return;
+    if (!valStr) { car.textContent = '?'; car.classList.remove('user-typing'); }
+    else         { car.textContent = valStr; car.classList.add('user-typing'); }
+    if (!car.querySelector('.ride-car-roof')) {
+      const roof = document.createElement('div');
+      roof.className = 'ride-car-roof';
+      car.appendChild(roof);
+    }
+  }
+
+  /* ---------- Clear / Check ---------- */
+  function onClearClicked() {
+    if (state.locked || !state.current || state.current.type !== 'fillGap') return;
+    state.gapInputs = {};
+    state.current.gaps.forEach(g => renderGapValue(g, ''));
+    setActiveGap(state.current.gaps[0]);
+    updateNumpadHint();
+  }
+
+  function onCheckClicked() {
+    if (state.locked || !state.current || state.current.type !== 'fillGap') return;
+    const allFilled = state.current.gaps.every(g =>
+      state.gapInputs[g] !== undefined && state.gapInputs[g] !== '');
+    if (!allFilled) {
+      $feedback.textContent = S('fillFirst');
+      $feedback.className = 'feedback bad';
+      return;
+    }
+    let allCorrect = true;
+    state.current.gaps.forEach(g => {
+      const expected = state.current.sequence[g];
+      const userVal  = parseInt(state.gapInputs[g], 10);
+      const car = [...$carsRow.querySelectorAll('.ride-car.gap')]
+        .find(c => parseInt(c.dataset.gap, 10) === g);
+      if (userVal !== expected) {
+        allCorrect = false;
+        if (car) car.classList.add('wrong-flash');
+      } else {
+        if (car) car.classList.add('correct-flash');
+      }
+    });
+    if (allCorrect) {
+      handleCorrect();
+    } else {
+      const q = state.current;
+      setTimeout(() => {
+        q.gaps.forEach(g => {
+          const car = [...$carsRow.querySelectorAll('.ride-car.gap')]
+            .find(c => parseInt(c.dataset.gap, 10) === g);
+          if (car) {
+            car.textContent = String(q.sequence[g]);
+            if (!car.querySelector('.ride-car-roof')) {
+              const roof = document.createElement('div');
+              roof.className = 'ride-car-roof';
+              car.appendChild(roof);
+            }
+          }
+        });
+      }, 600);
+      const correctStr = q.gaps.map(g => q.sequence[g]).join(', ');
+      handleWrong(null, correctStr);
+    }
+  }
+
+  /* ---------- MC click ---------- */
+  function onMCClicked(btn, value, correctValue) {
+    if (state.locked) return;
+    if (value === correctValue) handleCorrect(btn);
+    else handleWrong(btn, null);
+  }
+
+  /* ---------- Outcome handlers ---------- */
+  function handleCorrect(btn) {
+    state.locked = true;
+    state.progress = Math.min(TARGET_PROGRESS, state.progress + INCREMENT_RIGHT);
+    const praiseKey = state.current.type === 'fillGap'      ? 'praiseFillGap'
+                    : state.current.type === 'identifySkip' ? 'praiseIdentify'
+                    : 'praiseMC';
+    $feedback.textContent = pick(S(praiseKey));
+    $feedback.className = 'feedback good';
+    if (btn) btn.classList.add('correct-flash');
+    updateProgress();
+    if (state.progress >= TARGET_PROGRESS) setTimeout(showReward, 1000);
+    else setTimeout(nextQuestion, FEEDBACK_DELAY);
+  }
+
+  function handleWrong(btn, correctDisplay) {
+    state.locked = true;
+    state.progress = Math.max(0, state.progress - DECREMENT_WRONG);
+    const q = state.current;
+    let msg;
+    if (q.type === 'fillGap') {
+      msg = q.nonMultiple
+        ? S('wrongTricky', correctDisplay, q.skip)
+        : S('wrongFill', correctDisplay);
+    } else if (q.type === 'identifySkip') {
+      msg = S('wrongIdentify', q.correct);
+    } else {
+      msg = S('wrongMC', q.correct);
+    }
+    $feedback.textContent = msg;
+    $feedback.className = 'feedback bad';
+    if (btn) btn.classList.add('wrong-flash');
+    if (q.type === 'mc' || q.type === 'identifySkip') {
+      [...$mcRow.querySelectorAll('.mc-btn')].forEach(b => {
+        if (parseInt(b.dataset.value, 10) === q.correct) b.classList.add('correct-flash');
+      });
+    }
+    updateProgress();
+    setTimeout(nextQuestion, FEEDBACK_DELAY + 900);
+  }
+
+  /* ---------- Main loop ---------- */
+  function nextQuestion() {
+    state.current = pickGenerator(state.progress)();
+    renderQuestion(state.current);
+  }
+
+  /* ---------- 100-Chart ---------- */
+  function openChart() {
+    if (!state.current) return;
+    const q = state.current;
+    if (q.type === 'identifySkip') {
+      $chartTitle.textContent  = S('chartTitleIdentify');
+      $chartLegend.textContent = S('chartLegendIdentify');
+    } else {
+      $chartTitle.innerHTML    = S('chartTitleSkip', q.skip, q.direction) +
+        ` <span style="color:${SKIP_HEX[q.skip]}">●</span>`;
+      $chartLegend.textContent = S('chartLegendSkip', q.skip);
+    }
+    $hundredGrid.innerHTML = '';
+    const seqSet = new Set(q.sequence);
+    for (let n = 1; n <= 100; n++) {
+      const cell = document.createElement('div');
+      cell.className = 'hcell';
+      cell.textContent = String(n);
+      if (q.type !== 'identifySkip' && q.skip) {
+        const base = Math.min(...q.sequence);
+        if (n >= base && (n - base) % q.skip === 0) {
+          cell.classList.add('skip');
+          cell.style.setProperty('--skip-color', SKIP_HEX[q.skip]);
+        }
+      }
+      if (seqSet.has(n)) cell.classList.add('current-target');
+      $hundredGrid.appendChild(cell);
+    }
+    $chartOverlay.hidden = false;
+    $hintBtn.classList.add('active');
+  }
+  function closeChart() {
+    $chartOverlay.hidden = true;
+    $hintBtn.classList.remove('active');
+  }
+
+  /* ---------- Reward ---------- */
+  function showReward() {
+    const reward = chooseReward(rewardStore.list);
+    mountReward($rewardImgWrap, reward, S('rewardMissing'));
+    spawnConfetti($confetti);
+    $rewardModal.hidden = false;
+    trapFocus($rewardModal);
+    $playAgainBtn.focus();
+  }
+
+  /* ---------- Reset ---------- */
+  function resetGame() {
+    releaseFocus($rewardModal);
+    state.progress  = 0;
+    state.locked    = false;
+    $rewardModal.hidden = true;
+    $confetti.innerHTML = '';
+    updateProgress();
+    nextQuestion();
+  }
+
+  /* ---------- Event listeners ---------- */
+  $checkBtn.addEventListener('click', onCheckClicked);
+  $clearBtn.addEventListener('click', onClearClicked);
+  $hintBtn.addEventListener('click', () => $chartOverlay.hidden ? openChart() : closeChart());
+  $closeChartBtn.addEventListener('click', closeChart);
+  $chartOverlay.addEventListener('click', e => { if (e.target === $chartOverlay) closeChart(); });
+  $playAgainBtn.addEventListener('click', resetGame);
+  $langToggleBtn.addEventListener('click', () => setLang(lang === 'tr' ? 'en' : 'tr'));
+
+  [...$numpad.querySelectorAll('button')].forEach(btn => {
+    btn.addEventListener('click', () => onNumpadKey(btn.dataset.key));
+  });
+
+  document.addEventListener('keydown', e => {
+    if (state.locked || !state.current) return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'Escape' && !$chartOverlay.hidden) { closeChart(); return; }
+    const q = state.current;
+    if (q.type === 'fillGap') {
+      if (/^[0-9]$/.test(e.key))     onNumpadKey(e.key);
+      else if (e.key === 'Backspace') onNumpadKey('back');
+      else if (e.key === 'Enter')     onNumpadKey('enter');
+      else if (e.key === 'Tab') {
+        e.preventDefault();
+        const gaps = q.gaps;
+        const idx  = gaps.indexOf(state.activeGapIdx);
+        setActiveGap(gaps[(idx + 1) % gaps.length]);
+      }
+    } else {
+      if (['1','2','3','4'].includes(e.key)) {
+        const btns = $mcRow.querySelectorAll('.mc-btn');
+        const idx  = parseInt(e.key, 10) - 1;
+        if (btns[idx]) btns[idx].click();
+      }
+    }
+  });
+
+  /* ---------- Init ---------- */
+  applyStaticStrings();
+  updateProgress();
+  nextQuestion();
+})();
+</script>
+</body>
+</html>
