@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+<title>Örüntü Laboratuvarı — 2. Sınıf Matematik</title>
+<link rel="stylesheet" href="../shared/mf-design.css">
+<style>
+/* ============================================================
+   Pattern Lab / Örüntü Laboratuvarı — Grade 2
+   Target concept: number & shape pattern rules (MAT.2.1.5)
+   Progressive difficulty: repeating → growing → mixed → triangular
+   ============================================================ */
+
+/* Lab-specific color vars */
+:root {
+  --lab-cyan:   #4cd8e8;
+  --lab-pink:   #ff6fb4;
+  --lab-yellow: #ffe14d;
+  --lab-purple: #a47cff;
+  --lab-orange: #ff9a40;
+  --lab-green:  #67d65a;
+  --lab-red:    #ff5757;
+  --counter:    #c0b59a;
+}
+
+.ambient { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+
+main {
+  position: relative; z-index: 2; flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.6rem;
+  padding: 0.7rem 0.75rem 100px;
+  overflow-y: auto;
+}
+
+/* ---- Header extras ---- */
+.header-end {
+  flex: 1;
+  max-width: 540px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* Override shared --sun yellow badge with lab green for easy */
+.difficulty-badge        { background: var(--lab-green); }
+.difficulty-badge.medium { background: var(--lab-yellow); }
+.difficulty-badge.hard   { background: var(--lab-red); color: #fff; }
+
+.hint-btn {
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 900;
+  padding: 0.3rem 0.6rem;
+  background: var(--lab-yellow);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.hint-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+.hint-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.hint-btn.active { background: var(--good); color: #fff; }
+
+/* ---- Decorative beakers (positioned above road strip) ---- */
+.beaker-decor {
+  position: absolute;
+  bottom: 90px;
+  width: 50px; height: 70px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.65;
+}
+.beaker-decor.left  { left: 12px; }
+.beaker-decor.right { right: 12px; transform: scaleX(-1); }
+
+/* ---- Prompt card ---- */
+.prompt-card {
+  width: min(820px, 96vw);
+  background: rgba(255,255,255,0.92);
+  border: 4px solid var(--ink);
+  border-radius: 16px;
+  padding: 0.55rem 1rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  text-align: center;
+}
+.instruction {
+  font-size: clamp(0.9rem, 2.3vw, 1.15rem);
+  font-weight: 800;
+  color: var(--ink);
+}
+.pattern-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 900;
+  padding: 0.15rem 0.55rem;
+  margin-top: 0.2rem;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--lab-cyan);
+  color: var(--ink);
+}
+
+/* ---- Experiment table (lab bench) ---- */
+.experiment-table {
+  width: min(820px, 96vw);
+  background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.07) 100%),
+              var(--counter);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  padding: 1rem 0.75rem;
+  box-shadow: 5px 5px 0 var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+/* Wood-grain hint */
+.experiment-table::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 30px,
+    rgba(110,99,71,0.12) 30px 31px,
+    transparent 31px 60px
+  );
+  pointer-events: none;
+}
+.pattern-row {
+  position: relative; z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-height: 110px;
+}
+
+/* ---- Term card ---- */
+.term {
+  position: relative;
+  min-width: 84px; min-height: 92px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 0.4rem 0.5rem;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 4px 0 var(--ink);
+  font-weight: 900;
+  font-size: clamp(1.3rem, 3.6vw, 1.8rem);
+  color: var(--ink);
+  animation: termPop 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes termPop {
+  0%   { transform: scale(0.3); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.term.unknown {
+  background: rgba(255,255,255,0.92);
+  border-style: dashed;
+  color: var(--ink-soft);
+  animation: termPulse 1.6s ease-in-out infinite;
+}
+@keyframes termPulse {
+  0%, 100% { transform: scale(1);    box-shadow: 0 4px 0 var(--ink), 0 0 0 rgba(255,210,63,0); }
+  50%      { transform: scale(1.05); box-shadow: 0 4px 0 var(--ink), 0 0 18px rgba(255,210,63,0.6); }
+}
+.term-index {
+  position: absolute;
+  top: -8px; left: -8px;
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.7rem; font-weight: 900;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+}
+.shape-display {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 60px;
+}
+.shape-display svg { display: block; max-width: 100%; max-height: 100%; }
+.term-count {
+  margin-top: 0.2rem;
+  font-size: 0.85rem; font-weight: 900;
+  color: var(--ink-soft);
+}
+.term.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; color: #fff; }
+.term.wrong-flash   { animation: wrongShake  0.5s ease; background: var(--bad)  !important; color: #fff; }
+
+/* Delta arrows (shown after wrong answer) */
+.delta-arrow {
+  position: relative; z-index: 3;
+  display: inline-flex; flex-direction: column;
+  align-items: center;
+  min-width: 30px;
+  color: var(--bad);
+  font-weight: 900; font-size: 0.85rem;
+  opacity: 0;
+  animation: deltaAppear 0.4s ease forwards;
+}
+.delta-arrow.show { opacity: 1; }
+@keyframes deltaAppear { to { opacity: 1; } }
+.delta-arrow .symbol { font-size: 1.1rem; line-height: 1; }
+.delta-arrow .value {
+  font-size: 0.75rem; padding: 1px 4px;
+  background: #fff; border: 2px solid var(--bad); border-radius: 4px;
+}
+
+/* ---- Step area ---- */
+.step-area {
+  width: min(820px, 96vw);
+  display: flex; flex-direction: column;
+  gap: 0.6rem; align-items: center;
+}
+.step-label {
+  font-size: 0.85rem; font-weight: 900;
+  color: var(--ink);
+  background: rgba(0,0,0,0.07);
+  padding: 0.25rem 0.7rem;
+  border-radius: 8px;
+  border: 2px solid var(--ink-soft);
+  letter-spacing: 0.04em;
+  display: inline-flex; align-items: center; gap: 0.3rem;
+}
+.step-label .step-num {
+  background: var(--lab-yellow);
+  color: var(--ink);
+  font-weight: 900;
+  padding: 0 5px;
+  border-radius: 4px;
+}
+.step-label.done { background: rgba(76,175,80,0.15); border-color: var(--good); }
+.step-label.done .step-num { background: var(--good); color: #fff; }
+
+/* ---- Multiple-choice rows ---- */
+.mc-row {
+  display: flex; gap: 0.5rem;
+  justify-content: center; flex-wrap: wrap;
+  width: 100%;
+}
+.mc-btn {
+  flex: 1 1 110px; max-width: 190px;
+  min-height: 70px;
+  font-family: inherit;
+  font-size: clamp(1.1rem, 3.2vw, 1.6rem);
+  font-weight: 900;
+  border: 4px solid var(--ink);
+  border-radius: 12px;
+  background: #fff; color: var(--ink);
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  padding: 0.5rem 0.7rem;
+  line-height: 1.15;
+}
+.mc-btn:nth-child(1) { background: var(--b4); color: #fff; }
+.mc-btn:nth-child(2) { background: var(--b2); color: var(--ink); }
+.mc-btn:nth-child(3) { background: var(--b5); color: #fff; }
+.mc-btn:nth-child(4) { background: var(--b6); color: var(--ink); }
+.mc-btn:hover  { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+.mc-btn:active { transform: translate(2px, 2px);   box-shadow: 2px 2px 0 var(--ink); }
+.mc-btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.mc-btn.correct-flash { animation: correctPulse 0.6s ease; background: var(--good) !important; color: #fff; }
+.mc-btn.wrong-flash   { animation: wrongShake  0.5s ease; background: var(--bad)  !important; color: #fff; }
+.mc-btn[disabled] { opacity: 0.45; cursor: not-allowed; box-shadow: 2px 2px 0 var(--ink); transform: none; }
+
+.mc-btn.shape-choice { padding: 0.4rem; min-height: 90px; }
+.mc-btn.shape-choice .shape-display { height: 55px; }
+.mc-btn.shape-choice .shape-label { font-size: 0.8rem; margin-top: 0.2rem; opacity: 0.85; }
+.mc-btn.rule-choice {
+  font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+  line-height: 1.25; padding: 0.6rem 0.5rem; min-height: 60px;
+}
+
+/* ---- Feedback wrap ---- */
+.feedback-wrap {
+  width: min(820px, 96vw);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.3rem;
+}
+.rule-reveal {
+  display: none;
+  font-size: 0.95rem; font-weight: 800;
+  color: var(--ink);
+  background: var(--lab-yellow);
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  padding: 0.4rem 0.9rem;
+  box-shadow: 3px 3px 0 var(--ink);
+  max-width: 90%; text-align: center;
+}
+.rule-reveal.show { display: inline-block; animation: bounceIn 0.4s ease; }
+.rule-reveal .label { color: var(--ink-soft); font-weight: 700; margin-right: 0.3rem; }
+
+/* ---- Mobile ---- */
+@media (max-width: 560px) {
+  .term { min-width: 64px; min-height: 76px; font-size: 1.1rem; padding: 0.3rem; }
+  .shape-display { height: 46px; }
+  .term-index { width: 18px; height: 18px; font-size: 0.6rem; top: -6px; left: -6px; }
+  .beaker-decor { display: none; }
+  .header-end { max-width: none; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Decorative lab beakers -->
+  <svg class="beaker-decor left" viewBox="0 0 50 70" aria-hidden="true">
+    <path d="M 12 8 L 12 24 L 4 60 Q 4 66 10 66 L 40 66 Q 46 66 46 60 L 38 24 L 38 8 Z"
+          fill="#b8e8f0" stroke="#1f1d2c" stroke-width="3"/>
+    <path d="M 6 50 L 44 50 L 41 60 Q 41 64 36 64 L 14 64 Q 9 64 9 60 Z"
+          fill="#8cd6ee" stroke="#1f1d2c" stroke-width="2"/>
+    <circle cx="18" cy="55" r="2" fill="#fff" opacity="0.8"/>
+    <circle cx="32" cy="58" r="1.5" fill="#fff" opacity="0.8"/>
+    <line x1="10" y1="8" x2="40" y2="8" stroke="#1f1d2c" stroke-width="3"/>
+  </svg>
+  <svg class="beaker-decor right" viewBox="0 0 50 70" aria-hidden="true">
+    <path d="M 12 8 L 12 24 L 4 60 Q 4 66 10 66 L 40 66 Q 46 66 46 60 L 38 24 L 38 8 Z"
+          fill="#ffd6e8" stroke="#1f1d2c" stroke-width="3"/>
+    <path d="M 5 45 L 45 45 L 41 60 Q 41 64 36 64 L 14 64 Q 9 64 9 60 Z"
+          fill="#ff9ec5" stroke="#1f1d2c" stroke-width="2"/>
+    <circle cx="20" cy="52" r="2" fill="#fff" opacity="0.8"/>
+    <circle cx="30" cy="55" r="1.5" fill="#fff" opacity="0.8"/>
+    <line x1="10" y1="8" x2="40" y2="8" stroke="#1f1d2c" stroke-width="3"/>
+  </svg>
+
+  <!-- Ambient background layers -->
+  <div class="ambient" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+  </div>
+  <div class="road" aria-hidden="true">
+    <div class="car car-1">🔬</div>
+    <div class="car car-2">⚗️</div>
+    <div class="car car-3">🧫</div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="title" id="titleEl">🧪 Örüntü Laboratuvarı</div>
+    <div class="header-end">
+      <span class="difficulty-badge" id="difficultyBadge">Kolay</span>
+      <button class="hint-btn" id="hintBtn" type="button" aria-pressed="false">💡 İpucu</button>
+      <div class="progress-wrap" role="progressbar"
+           aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"
+           aria-label="İlerleme" id="progressBar">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 / 10</div>
+      </div>
+      <button class="lang-toggle" id="langToggleBtn" type="button">EN</button>
+    </div>
+  </header>
+
+  <!-- Main game area -->
+  <main>
+
+    <!-- Prompt -->
+    <section class="prompt-card">
+      <div class="instruction" id="instruction"></div>
+      <div id="patternTagWrap"></div>
+    </section>
+
+    <!-- Experiment table -->
+    <section class="experiment-table">
+      <div class="pattern-row" id="patternRow"></div>
+    </section>
+
+    <!-- Two-step answer area -->
+    <div class="step-area" id="stepArea">
+      <div class="step-label" id="step1Label" hidden>
+        <span class="step-num">1</span>
+        <span id="step1Text"></span>
+      </div>
+      <div class="mc-row" id="mcRow1" hidden></div>
+
+      <div class="step-label" id="step2Label" hidden>
+        <span class="step-num">2</span>
+        <span id="step2Text"></span>
+      </div>
+      <div class="mc-row" id="mcRow2" hidden></div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="feedback-wrap">
+      <div class="feedback" id="feedback" aria-live="polite"></div>
+      <div class="rule-reveal" id="ruleReveal"></div>
+    </div>
+
+  </main>
+
+  <!-- Reward modal -->
+  <div class="reward-modal" id="rewardModal" hidden
+       role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+    <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+    <div class="reward-card">
+      <h2 id="rewardTitle">🧪 Lab Keşfi! 🎉</h2>
+      <div class="reward-image-wrap" id="rewardImageWrap"></div>
+      <p class="reward-msg" id="rewardMsg">Harika örüntü keşfi, genç bilim insanı!</p>
+      <button class="play-again" id="playAgainBtn" type="button">Tekrar Oyna</button>
+    </div>
+  </div>
+
+</div>
+<script src="../shared/mf-core.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const { rand, pick, shuffle, loadRewards, chooseReward, mountReward,
+          spawnConfetti, trapFocus, releaseFocus } = MF;
+
+  /* ---------- Config ---------- */
+  const TARGET_PROGRESS = 10;
+  const INCREMENT_RIGHT = 1;
+  const DECREMENT_WRONG = 1;
+  const FEEDBACK_DELAY  = 1300;
+  const DIFFICULTY = { medium: 3, hard: 6 };
+
+  /* ---------- Bilingual strings ---------- */
+  const STRINGS = {
+    en: {
+      title:        '🧪 Pattern Lab',
+      langToggle:   'TR',
+      progressAria: 'Progress',
+      diffEasy:     'Easy',
+      diffMedium:   'Medium',
+      diffHard:     'Hard',
+      hintBtn:      '💡 Hint',
+      hintBtnAria:  'Show hint',
+
+      instrRepeating:  'Find the next shape, then the RULE!',
+      instrArithmetic: 'Find the next number, then the RULE!',
+      instrGrowing:    'How many shapes come next? Then pick the RULE!',
+      instrMixed:      '🔥 TRICKY! Two operations alternate. Find next + the rule.',
+      instrTriangular: '🔥 TRICKY! The difference itself GROWS. Find next + the rule.',
+      instrGrowingTri: '🔥 TRICKY! Look at the growing triangle. Find next + the rule.',
+
+      tagRepeating:  (rule) => `Repeating shapes (${rule})`,
+      tagArithmetic: 'Number pattern',
+      tagGrowing:    'Growing shapes',
+      tagMixed:      'Mixed operations',
+      tagTriangular: 'Growing difference',
+      tagGrowingTri: 'Triangular numbers',
+
+      step1Shape:  'Pick the next SHAPE',
+      step1Count:  'How many shapes come next?',
+      step1Number: 'Pick the next NUMBER',
+      step2:       'Now pick the RULE',
+
+      shape_circle:   'circle',
+      shape_square:   'square',
+      shape_triangle: 'triangle',
+      shape_diamond:  'diamond',
+      shape_star:     'star',
+
+      ruleLabel:     'Rule:',
+      hintLookAt:    '💡 Look at the differences between terms.',
+      hintRepeating: ()    => '💡 Hint: count the period — how often does a shape repeat?',
+      hintArithmetic:(q)   => `💡 Hint: ${q.sequence[0]} → ${q.sequence[1]} is +${q.step}. Same for all?`,
+      hintGrowing:   (q)   => `💡 Hint: ${q.counts[0]} → ${q.counts[1]} is +${q.step} shapes. Same for all?`,
+      hintMixed:     (q)   => { const d1=q.sequence[1]-q.sequence[0],d2=q.sequence[2]-q.sequence[1]; return `💡 Hint: ${q.sequence[0]} → ${q.sequence[1]} is +${d1}, then +${d2}. The jumps alternate.`; },
+      hintTriangular:(q)   => { const arr=q.sequence||q.counts; const ds=arr.slice(1).map((v,i)=>v-arr[i]).join(', '); return `💡 Hint: the jumps are ${ds} — they grow by 1 each time.`; },
+
+      explainRepeating:  (period, rule) => `The pattern repeats every ${period} shapes: ${rule}`,
+      explainArithmetic: (step)         => `Add ${step} each time (+${step})`,
+      explainGrowing:    (step)         => `Each step adds ${step} shape${step>1?'s':''} (+${step})`,
+      explainMixed:      (op1, op2)     => `The rule alternates: +${op1}, then +${op2}, then +${op1}...`,
+      explainTriangular: (diffs, nd)    => `Differences are ${diffs}, then ${nd}. The jump gets bigger by 1.`,
+      explainGrowingTri: (nd)           => `1, 3, 6, 10, 15... each step adds one more. Next jump is +${nd}.`,
+
+      praises: ['🧪 Discovery! Pattern solved!','⭐ Lab champion!','✨ Both parts — nailed it!',
+                '🔬 You spotted the rule!','⚗️ Pattern detective!','👏 Brilliant scientist!','🌟 Formula found!'],
+      wrongMissedTerm: (rule) => `🧪 You missed the next term. The rule was: ${rule}`,
+      wrongRule:       (rule) => `🧪 The rule was: ${rule}`,
+
+      rewardTitle:   '🧪 Lab Discovery! 🎉',
+      rewardMsg:     'Amazing pattern detection, young scientist!',
+      playAgain:     'Play Again',
+      rewardMissing: '(reward image missing)',
+    },
+    tr: {
+      title:        '🧪 Örüntü Laboratuvarı',
+      langToggle:   'EN',
+      progressAria: 'İlerleme',
+      diffEasy:     'Kolay',
+      diffMedium:   'Orta',
+      diffHard:     'Zor',
+      hintBtn:      '💡 İpucu',
+      hintBtnAria:  'İpucu göster',
+
+      instrRepeating:  'Sonraki şekli bul, sonra KURALI!',
+      instrArithmetic: 'Sonraki sayıyı bul, sonra KURALI!',
+      instrGrowing:    'Sırada kaç şekil var? KURALI seç!',
+      instrMixed:      '🔥 ZOR! İki işlem dönüşümlü. Sonrakini ve kuralı bul.',
+      instrTriangular: '🔥 ZOR! Farkın kendisi BÜYÜYOR. Sonrakini ve kuralı bul.',
+      instrGrowingTri: '🔥 ZOR! Büyüyen üçgene bak. Sonrakini ve kuralı bul.',
+
+      tagRepeating:  (rule) => `Tekrarlayan şekiller (${rule})`,
+      tagArithmetic: 'Sayı örüntüsü',
+      tagGrowing:    'Büyüyen şekiller',
+      tagMixed:      'Karma işlemler',
+      tagTriangular: 'Büyüyen fark',
+      tagGrowingTri: 'Üçgensel sayılar',
+
+      step1Shape:  'Sonraki ŞEKLİ seç',
+      step1Count:  'Sırada kaç şekil var?',
+      step1Number: 'Sonraki SAYIYI seç',
+      step2:       'Şimdi KURALI seç',
+
+      shape_circle:   'daire',
+      shape_square:   'kare',
+      shape_triangle: 'üçgen',
+      shape_diamond:  'baklava',
+      shape_star:     'yıldız',
+
+      ruleLabel:     'Kural:',
+      hintLookAt:    '💡 Terimler arasındaki farklara bak.',
+      hintRepeating: ()    => '💡 İpucu: periyodu say — bir şekil kaç adımda bir tekrar ediyor?',
+      hintArithmetic:(q)   => `💡 İpucu: ${q.sequence[0]} → ${q.sequence[1]} = +${q.step}. Hepsi aynı mı?`,
+      hintGrowing:   (q)   => `💡 İpucu: ${q.counts[0]} → ${q.counts[1]} = +${q.step} şekil. Hepsi aynı mı?`,
+      hintMixed:     (q)   => { const d1=q.sequence[1]-q.sequence[0],d2=q.sequence[2]-q.sequence[1]; return `💡 İpucu: ${q.sequence[0]} → ${q.sequence[1]} = +${d1}, sonra +${d2}. Dönüşümlü.`; },
+      hintTriangular:(q)   => { const arr=q.sequence||q.counts; const ds=arr.slice(1).map((v,i)=>v-arr[i]).join(', '); return `💡 İpucu: Atlayışlar: ${ds} — her seferinde 1 büyüyor.`; },
+
+      explainRepeating:  (period, rule) => `Örüntü her ${period} şekilde bir tekrarlanır: ${rule}`,
+      explainArithmetic: (step)         => `Her seferinde ${step} ekle (+${step})`,
+      explainGrowing:    (step)         => `Her adımda ${step} şekil eklenir (+${step})`,
+      explainMixed:      (op1, op2)     => `Kural dönüşümlü: +${op1}, sonra +${op2}, sonra +${op1}...`,
+      explainTriangular: (diffs, nd)    => `Farklar: ${diffs}, sonra ${nd}. Her seferinde 1 büyüyor.`,
+      explainGrowingTri: (nd)           => `1, 3, 6, 10, 15... her adım bir fazla. Sıradaki atlayış +${nd}.`,
+
+      praises: ['🧪 Keşfedildi! Örüntü çözüldü!','⭐ Lab şampiyonu!','✨ Her iki adım — mükemmel!',
+                '🔬 Kuralı buldun!','⚗️ Örüntü dedektifi!','👏 Harika bilim insanı!','🌟 Formül bulundu!'],
+      wrongMissedTerm: (rule) => `🧪 Sonraki terimi kaçırdın. Kural: ${rule}`,
+      wrongRule:       (rule) => `🧪 Kural şuydu: ${rule}`,
+
+      rewardTitle:   '🧪 Lab Keşfi! 🎉',
+      rewardMsg:     'Harika örüntü keşfi, genç bilim insanı!',
+      playAgain:     'Tekrar Oyna',
+      rewardMissing: '(ödül resmi eksik)',
+    },
+  };
+
+  /* ---------- i18n ---------- */
+  let lang = localStorage.getItem('mf_lang') || 'tr';
+  const S = (k, ...a) => {
+    const v = STRINGS[lang][k];
+    return typeof v === 'function' ? v(...a) : v;
+  };
+
+  const rewardStore = loadRewards();
+
+  /* ---------- DOM refs ---------- */
+  const $titleEl       = document.getElementById('titleEl');
+  const $instruction   = document.getElementById('instruction');
+  const $patternTagWrap= document.getElementById('patternTagWrap');
+  const $patternRow    = document.getElementById('patternRow');
+  const $step1Label    = document.getElementById('step1Label');
+  const $step1Text     = document.getElementById('step1Text');
+  const $step2Label    = document.getElementById('step2Label');
+  const $step2Text     = document.getElementById('step2Text');
+  const $mcRow1        = document.getElementById('mcRow1');
+  const $mcRow2        = document.getElementById('mcRow2');
+  const $feedback      = document.getElementById('feedback');
+  const $ruleReveal    = document.getElementById('ruleReveal');
+  const $hintBtn       = document.getElementById('hintBtn');
+  const $progressFill  = document.getElementById('progressFill');
+  const $progressText  = document.getElementById('progressText');
+  const $progressBar   = document.getElementById('progressBar');
+  const $diffBadge     = document.getElementById('difficultyBadge');
+  const $rewardModal   = document.getElementById('rewardModal');
+  const $rewardTitle   = document.getElementById('rewardTitle');
+  const $rewardMsg     = document.getElementById('rewardMsg');
+  const $rewardImgWrap = document.getElementById('rewardImageWrap');
+  const $confetti      = document.getElementById('confettiLayer');
+  const $playAgainBtn  = document.getElementById('playAgainBtn');
+  const $langToggleBtn = document.getElementById('langToggleBtn');
+
+  /* ---------- Apply static strings ---------- */
+  function applyStaticStrings() {
+    document.documentElement.lang = lang;
+    document.title = lang === 'tr'
+      ? 'Örüntü Laboratuvarı — 2. Sınıf Matematik'
+      : 'Pattern Lab — Grade 2 Math';
+    $titleEl.textContent       = S('title');
+    $langToggleBtn.textContent = S('langToggle');
+    $hintBtn.textContent       = S('hintBtn');
+    $hintBtn.setAttribute('aria-label', S('hintBtnAria'));
+    $rewardTitle.textContent   = S('rewardTitle');
+    $rewardMsg.textContent     = S('rewardMsg');
+    $playAgainBtn.textContent  = S('playAgain');
+    $progressBar.setAttribute('aria-label', S('progressAria'));
+    updateDiffBadge();
+  }
+
+  function setLang(next) {
+    lang = next;
+    localStorage.setItem('mf_lang', lang);
+    applyStaticStrings();
+    if (state.current) {
+      const s1done    = state.step1Done;
+      const s1correct = state.step1Correct;
+      renderQuestion(state.current);
+      if (s1done) {
+        state.step1Done    = true;
+        state.step1Correct = s1correct;
+        [...$mcRow1.querySelectorAll('.mc-btn')].forEach(b => { b.disabled = true; });
+        [...$mcRow2.querySelectorAll('.mc-btn')].forEach(b => { b.disabled = false; });
+        if (s1correct) $step1Label.classList.add('done');
+      }
+    }
+  }
+
+  /* ---------- Progress / difficulty ---------- */
+  function updateDiffBadge() {
+    const p = state.progress;
+    let text, cls;
+    if (p < DIFFICULTY.medium)    { text = S('diffEasy');   cls = ''; }
+    else if (p < DIFFICULTY.hard) { text = S('diffMedium'); cls = 'medium'; }
+    else                          { text = S('diffHard');   cls = 'hard'; }
+    $diffBadge.textContent = text;
+    $diffBadge.className   = 'difficulty-badge ' + cls;
+  }
+
+  function updateProgress() {
+    const pct = (state.progress / TARGET_PROGRESS) * 100;
+    $progressFill.style.width = pct + '%';
+    $progressText.textContent = state.progress + ' / ' + TARGET_PROGRESS;
+    $progressBar.setAttribute('aria-valuenow', String(state.progress));
+    updateDiffBadge();
+  }
+
+  /* ---------- Game state ---------- */
+  const state = {
+    progress:     0,
+    current:      null,
+    locked:       false,
+    step1Done:    false,
+    step1Correct: null,
+    hintOn:       false,
+  };
+
+  /* =====================================================
+     SHAPE RENDERERS
+     ===================================================== */
+  const SHAPE_TOKENS = {
+    circle:   { color: 'var(--lab-cyan)' },
+    square:   { color: 'var(--lab-yellow)' },
+    triangle: { color: 'var(--lab-pink)' },
+    diamond:  { color: 'var(--lab-purple)' },
+    star:     { color: 'var(--lab-orange)' },
+  };
+  const SHAPE_NAMES = Object.keys(SHAPE_TOKENS);
+
+  function svgForToken(token, size = 40) {
+    const c = SHAPE_TOKENS[token].color;
+    const s = size, cx = s / 2, cy = s / 2;
+    switch (token) {
+      case 'circle':
+        return `<svg viewBox="0 0 ${s} ${s}" width="${s}" height="${s}"><circle cx="${cx}" cy="${cy}" r="${s*0.38}" fill="${c}" stroke="#1f1d2c" stroke-width="3"/></svg>`;
+      case 'square':
+        return `<svg viewBox="0 0 ${s} ${s}" width="${s}" height="${s}"><rect x="${s*0.16}" y="${s*0.16}" width="${s*0.68}" height="${s*0.68}" fill="${c}" stroke="#1f1d2c" stroke-width="3" rx="3"/></svg>`;
+      case 'triangle':
+        return `<svg viewBox="0 0 ${s} ${s}" width="${s}" height="${s}"><polygon points="${cx},${s*0.14} ${s*0.85},${s*0.85} ${s*0.15},${s*0.85}" fill="${c}" stroke="#1f1d2c" stroke-width="3" stroke-linejoin="round"/></svg>`;
+      case 'diamond':
+        return `<svg viewBox="0 0 ${s} ${s}" width="${s}" height="${s}"><polygon points="${cx},${s*0.12} ${s*0.85},${cy} ${cx},${s*0.88} ${s*0.15},${cy}" fill="${c}" stroke="#1f1d2c" stroke-width="3" stroke-linejoin="round"/></svg>`;
+      case 'star':
+        return `<svg viewBox="0 0 ${s} ${s}" width="${s}" height="${s}"><polygon points="${cx},${s*0.1} ${cx+s*0.11},${cy-s*0.04} ${cx+s*0.32},${cy-s*0.04} ${cx+s*0.15},${cy+s*0.1} ${cx+s*0.21},${cy+s*0.32} ${cx},${cy+s*0.18} ${cx-s*0.21},${cy+s*0.32} ${cx-s*0.15},${cy+s*0.1} ${cx-s*0.32},${cy-s*0.04} ${cx-s*0.11},${cy-s*0.04}" fill="${c}" stroke="#1f1d2c" stroke-width="2" stroke-linejoin="round"/></svg>`;
+    }
+    return '';
+  }
+
+  function svgForGrowingShape(count, mode) {
+    const cellSize = 12, padding = 4;
+    let cells = [];
+    if (mode === 'row') {
+      for (let i = 0; i < count; i++) cells.push({ x: i, y: 0 });
+    } else if (mode === 'square') {
+      for (let i = 0; i < count; i++) cells.push({ x: i % 5, y: Math.floor(i / 5) });
+    } else if (mode === 'triangle') {
+      let placed = 0, row = 0;
+      while (placed < count) {
+        for (let i = 0; i < row + 1 && placed < count; i++) {
+          cells.push({ x: i + (3 - row / 2), y: row }); placed++;
+        }
+        row++;
+      }
+    } else if (mode === 'L') {
+      cells.push({ x: 0, y: 0 });
+      let remaining = count - 1, i = 1;
+      while (remaining > 0) {
+        cells.push(i % 2 === 1 ? { x: 0, y: -Math.ceil(i / 2) } : { x: Math.ceil(i / 2), y: 0 });
+        remaining--; i++;
+      }
+    }
+    if (!cells.length) return '';
+    const xs = cells.map(c => c.x), ys = cells.map(c => c.y);
+    const minX = Math.min(...xs), minY = Math.min(...ys);
+    const maxX = Math.max(...xs), maxY = Math.max(...ys);
+    const w = (maxX - minX + 1) * cellSize + padding * 2;
+    const h = (maxY - minY + 1) * cellSize + padding * 2;
+    const color = mode === 'square' ? 'var(--lab-yellow)'
+                : mode === 'triangle' ? 'var(--lab-pink)'
+                : mode === 'L' ? 'var(--lab-purple)'
+                : 'var(--lab-cyan)';
+    let svg = `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">`;
+    for (const c of cells) {
+      const x = (c.x - minX) * cellSize + padding;
+      const y = (c.y - minY) * cellSize + padding;
+      if (mode === 'square')
+        svg += `<rect x="${x}" y="${y}" width="${cellSize-2}" height="${cellSize-2}" fill="${color}" stroke="#1f1d2c" stroke-width="1.5" rx="1.5"/>`;
+      else
+        svg += `<circle cx="${x+cellSize/2}" cy="${y+cellSize/2}" r="${cellSize/2-1.5}" fill="${color}" stroke="#1f1d2c" stroke-width="1.5"/>`;
+    }
+    svg += '</svg>';
+    return svg;
+  }
+
+  /* =====================================================
+     QUESTION GENERATORS
+     Each generator returns:
+       instrKey, step1LabelKey, tagKey, tagParams[],
+       ruleExplainKey, ruleExplainParams[],
+       ruleChoiceObjs[{ id, en, tr }], correctRuleId
+     ===================================================== */
+
+  function nextNumberDistractors(correct, seq, step) {
+    const set = new Set([correct]), list = [];
+    const tries = [
+      correct - 1, correct + 1, correct - 2, correct + 2,
+      seq[seq.length - 1] + 1,
+      seq[seq.length - 1] + step + 1,
+      seq[seq.length - 1] + step - 1,
+      seq[seq.length - 1] * 2,
+    ];
+    for (const t of tries) {
+      if (t > 0 && t < 100 && !set.has(t)) { set.add(t); list.push(t); }
+      if (list.length >= 3) break;
+    }
+    while (list.length < 3) {
+      const t = correct + rand(-5, 5);
+      if (t > 0 && t < 100 && !set.has(t)) { set.add(t); list.push(t); }
+    }
+    return list;
+  }
+
+  function genRepeatingShape(easy) {
+    const periodLen = easy ? 2 : pick([2, 3, 3]);
+    const tokens = shuffle(SHAPE_NAMES).slice(0, periodLen);
+    const sequence = [];
+    for (let i = 0; i < 6; i++) sequence.push(tokens[i % periodLen]);
+    const nextTerm = sequence[5];
+    const wrongInside = tokens.find(t => t !== nextTerm) || tokens[0];
+    const others = shuffle(SHAPE_NAMES.filter(t => !tokens.includes(t))).slice(0, 2);
+    const shapeChoices = shuffle([nextTerm, wrongInside, ...others]);
+
+    const repLabels = { 2: 'AB AB AB...', 3: 'ABC ABC ABC...', 4: 'ABCD ABCD...' };
+    const correctRuleId = 'rep_' + periodLen;
+    const allRuleObjs = [
+      { id: 'rep_2',   en: 'AB AB AB...',    tr: 'AB AB AB...'    },
+      { id: 'rep_3',   en: 'ABC ABC ABC...',  tr: 'ABC ABC ABC...'  },
+      { id: 'rep_4',   en: 'ABCD ABCD...',   tr: 'ABCD ABCD...'   },
+      { id: 'rep_AAB', en: 'AAB AAB...',      tr: 'AAB AAB...'      },
+    ];
+    const correct = allRuleObjs.find(r => r.id === correctRuleId);
+    const dists   = shuffle(allRuleObjs.filter(r => r.id !== correctRuleId)).slice(0, 2);
+
+    return {
+      type: 'repeating', kind: 'shape',
+      sequence: sequence.slice(0, 5), unknownTerm: nextTerm,
+      shapeChoices,
+      ruleChoiceObjs: shuffle([correct, ...dists]), correctRuleId,
+      instrKey: 'instrRepeating', step1LabelKey: 'step1Shape',
+      tagKey: 'tagRepeating', tagParams: [repLabels[periodLen] || 'AB AB...'],
+      ruleExplainKey: 'explainRepeating', ruleExplainParams: [periodLen, repLabels[periodLen] || ''],
+      periodLen,
+    };
+  }
+
+  function genArithmetic(easy) {
+    const step  = easy ? pick([2, 5, 10]) : pick([2, 3, 4, 5, 6, 7, 10]);
+    const start = rand(1, Math.max(2, 50 - step * 5));
+    const sequence = [];
+    for (let i = 0; i < 5; i++) sequence.push(start + step * i);
+    const nextTerm = start + step * 5;
+    if (nextTerm > 99) return genArithmetic(easy);
+
+    const numberChoices = shuffle([nextTerm, ...nextNumberDistractors(nextTerm, sequence, step)]);
+    const opts = [];
+    for (const c of [step-1, step+1, step-2, step+2, step+3]) {
+      if (c >= 1 && c <= 12 && c !== step && !opts.includes(c)) opts.push(c);
+      if (opts.length >= 3) break;
+    }
+    const correctRuleId = `add_${step}`;
+    const ruleChoiceObjs = shuffle([
+      { id: `add_${step}`, en: `+${step}`, tr: `+${step}` },
+      ...opts.slice(0, 3).map(c => ({ id: `add_${c}`, en: `+${c}`, tr: `+${c}` })),
+    ]);
+
+    return {
+      type: 'arithmetic', kind: 'number',
+      sequence, unknownTerm: nextTerm, step, numberChoices,
+      ruleChoiceObjs, correctRuleId,
+      instrKey: 'instrArithmetic', step1LabelKey: 'step1Number',
+      tagKey: 'tagArithmetic', tagParams: [],
+      ruleExplainKey: 'explainArithmetic', ruleExplainParams: [step],
+    };
+  }
+
+  function genGrowingShape() {
+    const step  = pick([2, 3]);
+    const start = pick([1, 2]);
+    const mode  = pick(['row', 'square', 'triangle']);
+    const counts = [];
+    for (let i = 0; i < 4; i++) counts.push(start + step * i);
+    const nextCount = start + step * 4;
+    if (nextCount > 20) return genGrowingShape();
+
+    const numberChoices = shuffle([nextCount, ...nextNumberDistractors(nextCount, counts, step)]);
+    const opts = [];
+    for (const c of [step-1, step+1, step-2, step+2, step+3]) {
+      if (c >= 1 && c <= 8 && c !== step && !opts.includes(c)) opts.push(c);
+      if (opts.length >= 3) break;
+    }
+    const correctRuleId = `gadd_${step}`;
+    const ruleChoiceObjs = shuffle([
+      { id: `gadd_${step}`, en: `+${step}`, tr: `+${step}` },
+      ...opts.slice(0, 3).map(c => ({ id: `gadd_${c}`, en: `+${c}`, tr: `+${c}` })),
+    ]);
+
+    return {
+      type: 'growing', kind: 'shapeCount',
+      counts, unknownTerm: nextCount, step, mode, numberChoices,
+      ruleChoiceObjs, correctRuleId,
+      instrKey: 'instrGrowing', step1LabelKey: 'step1Count',
+      tagKey: 'tagGrowing', tagParams: [],
+      ruleExplainKey: 'explainGrowing', ruleExplainParams: [step],
+    };
+  }
+
+  function genMixedOp() {
+    const op1 = pick([2, 3, 4, 5]);
+    let op2 = pick([1, 2, 3, 5, 6]);
+    while (op2 === op1) op2 = pick([1, 2, 3, 5, 6]);
+    const start = rand(1, 10);
+    const sequence = [start];
+    for (let i = 1; i < 5; i++) sequence.push(sequence[i-1] + (i % 2 === 1 ? op1 : op2));
+    const nextOp   = 5 % 2 === 1 ? op1 : op2;
+    const nextTerm = sequence[4] + nextOp;
+    if (nextTerm > 99) return genMixedOp();
+
+    const wrongOp  = nextOp === op1 ? op2 : op1;
+    const set = new Set([nextTerm]);
+    const dists = [];
+    [sequence[4]+wrongOp, sequence[4]+op1, nextTerm+1, nextTerm-1, nextTerm+2].forEach(d => {
+      if (d > 0 && d < 100 && !set.has(d) && dists.length < 3) { set.add(d); dists.push(d); }
+    });
+    const numberChoices = shuffle([nextTerm, ...dists]);
+
+    const correctRuleId = 'mixed';
+    const ruleChoiceObjs = shuffle([
+      { id: 'mixed',  en: `+${op1}, +${op2} repeating`,  tr: `+${op1}, +${op2} dönüşümlü`   },
+      { id: 'mop1',   en: `+${op1} each time`,           tr: `her seferinde +${op1}`          },
+      { id: 'mop2',   en: `+${op2} each time`,           tr: `her seferinde +${op2}`          },
+      { id: 'msum',   en: `+${op1+op2} each time`,       tr: `her seferinde +${op1+op2}`      },
+    ]);
+
+    return {
+      type: 'mixedOp', kind: 'number',
+      sequence, unknownTerm: nextTerm, op1, op2, numberChoices,
+      ruleChoiceObjs, correctRuleId,
+      instrKey: 'instrMixed', step1LabelKey: 'step1Number',
+      tagKey: 'tagMixed', tagParams: [],
+      ruleExplainKey: 'explainMixed', ruleExplainParams: [op1, op2],
+    };
+  }
+
+  function genTriangular() {
+    const T = n => n * (n + 1) / 2;
+    const startN = rand(1, 4);
+    const sequence = [];
+    for (let i = 0; i < 5; i++) sequence.push(T(startN + i));
+    const nextTerm = T(startN + 5);
+    if (nextTerm > 99) return genTriangular();
+
+    const lastDiff  = sequence[4] - sequence[3];
+    const correctDiff = lastDiff + 1;
+    const set = new Set([nextTerm]);
+    const dists = [];
+    [sequence[4]+lastDiff, nextTerm+1, nextTerm-1, sequence[4]+lastDiff+2].forEach(d => {
+      if (d > 0 && d < 100 && !set.has(d) && dists.length < 3) { set.add(d); dists.push(d); }
+    });
+    const numberChoices = shuffle([nextTerm, ...dists]);
+    const diffs = sequence.slice(1).map((v, i) => v - sequence[i]).join(', ');
+
+    const correctRuleId = 'tri_grow';
+    const ruleChoiceObjs = shuffle([
+      { id: 'tri_grow',             en: `Add 1 more each time (+${correctDiff} next)`, tr: `Her seferinde 1 daha fazla (+${correctDiff} sırada)` },
+      { id: `tld_${lastDiff}`,      en: `+${lastDiff} each time`,                     tr: `her seferinde +${lastDiff}`                          },
+      { id: `tcd_${correctDiff}`,   en: `+${correctDiff} each time`,                  tr: `her seferinde +${correctDiff}`                       },
+      { id: 'double',               en: 'Double each time',                            tr: 'her seferinde 2 katı'                                },
+    ]);
+
+    return {
+      type: 'triangular', kind: 'number',
+      sequence, unknownTerm: nextTerm, numberChoices,
+      ruleChoiceObjs, correctRuleId,
+      instrKey: 'instrTriangular', step1LabelKey: 'step1Number',
+      tagKey: 'tagTriangular', tagParams: [],
+      ruleExplainKey: 'explainTriangular', ruleExplainParams: [diffs, correctDiff],
+    };
+  }
+
+  function genGrowingTriangular() {
+    const T = n => n * (n + 1) / 2;
+    const counts = [T(1), T(2), T(3), T(4)];   // 1, 3, 6, 10
+    const nextCount = T(5);                      // 15
+    const lastDiff    = counts[3] - counts[2];
+    const correctDiff = lastDiff + 1;
+    const set = new Set([nextCount]);
+    const dists = [];
+    [counts[3]+lastDiff, nextCount+1, nextCount-1, counts[3]+2].forEach(d => {
+      if (d > 0 && d < 30 && !set.has(d) && dists.length < 3) { set.add(d); dists.push(d); }
+    });
+    const numberChoices = shuffle([nextCount, ...dists]);
+
+    const correctRuleId = 'tri_grow';
+    const ruleChoiceObjs = shuffle([
+      { id: 'tri_grow',           en: `Add 1 more each time (+${correctDiff} next)`, tr: `Her seferinde 1 daha fazla (+${correctDiff} sırada)` },
+      { id: `gtld_${lastDiff}`,   en: `+${lastDiff} each time`,                     tr: `her seferinde +${lastDiff}`                          },
+      { id: `gtcd_${correctDiff}`,en: `+${correctDiff} each time`,                  tr: `her seferinde +${correctDiff}`                       },
+      { id: 'double',             en: 'Double each time',                            tr: 'her seferinde 2 katı'                                },
+    ]);
+
+    return {
+      type: 'growingTri', kind: 'shapeCount',
+      counts, unknownTerm: nextCount, mode: 'triangle', numberChoices,
+      ruleChoiceObjs, correctRuleId,
+      instrKey: 'instrGrowingTri', step1LabelKey: 'step1Count',
+      tagKey: 'tagGrowingTri', tagParams: [],
+      ruleExplainKey: 'explainGrowingTri', ruleExplainParams: [correctDiff],
+    };
+  }
+
+  function pickGenerator(progress) {
+    let pool;
+    if (progress < DIFFICULTY.medium) {
+      pool = [{ fn: () => genRepeatingShape(true), weight: 50 },
+              { fn: () => genArithmetic(true),     weight: 50 }];
+    } else if (progress < DIFFICULTY.hard) {
+      pool = [{ fn: () => genRepeatingShape(false), weight: 25 },
+              { fn: () => genArithmetic(false),     weight: 30 },
+              { fn: () => genGrowingShape(),        weight: 45 }];
+    } else {
+      pool = [{ fn: () => genArithmetic(false),    weight: 12 },
+              { fn: () => genGrowingShape(),       weight: 18 },
+              { fn: () => genRepeatingShape(false),weight: 12 },
+              { fn: () => genMixedOp(),            weight: 25 },
+              { fn: () => genTriangular(),         weight: 18 },
+              { fn: () => genGrowingTriangular(),  weight: 15 }];
+    }
+    const total = pool.reduce((s, g) => s + g.weight, 0);
+    let r = Math.random() * total;
+    for (const g of pool) { r -= g.weight; if (r <= 0) return g.fn; }
+    return pool[0].fn;
+  }
+
+  /* ---------- Render pattern row ---------- */
+  function renderPattern(q) {
+    $patternRow.innerHTML = '';
+    const isRepeating = q.type === 'repeating';
+    const isGrowing   = q.kind === 'shapeCount';
+    let terms = [];
+    if (isRepeating) {
+      terms = q.sequence.map(token => ({
+        display: `<div class="shape-display">${svgForToken(token, 40)}</div>`, sub: null,
+      }));
+    } else if (isGrowing) {
+      terms = q.counts.map(c => ({
+        display: `<div class="shape-display">${svgForGrowingShape(c, q.mode)}</div>`, sub: String(c),
+      }));
+    } else {
+      terms = q.sequence.map(v => ({ display: `<span>${v}</span>`, sub: null }));
+    }
+    terms.forEach((t, i) => {
+      const term = document.createElement('div');
+      term.className = 'term';
+      term.innerHTML = `<div class="term-index">${i + 1}</div>${t.display}`;
+      if (t.sub) {
+        const sub = document.createElement('div');
+        sub.className = 'term-count'; sub.textContent = t.sub;
+        term.appendChild(sub);
+      }
+      $patternRow.appendChild(term);
+    });
+    const unknown = document.createElement('div');
+    unknown.className = 'term unknown';
+    unknown.dataset.unknown = '1';
+    unknown.innerHTML = `<div class="term-index">${terms.length + 1}</div>?`;
+    $patternRow.appendChild(unknown);
+  }
+
+  function revealCorrectAnswer(q) {
+    const unknown = $patternRow.querySelector('.term.unknown');
+    if (!unknown) return;
+    unknown.classList.remove('unknown');
+    unknown.classList.add('correct-flash');
+    const n = q.kind === 'shapeCount' ? q.counts.length : q.sequence.length;
+    if (q.kind === 'shapeCount') {
+      unknown.innerHTML = `<div class="term-index">${n+1}</div><div class="shape-display">${svgForGrowingShape(q.unknownTerm, q.mode)}</div><div class="term-count">${q.unknownTerm}</div>`;
+    } else if (q.type === 'repeating') {
+      unknown.innerHTML = `<div class="term-index">${n+1}</div><div class="shape-display">${svgForToken(q.unknownTerm, 40)}</div>`;
+    } else {
+      unknown.innerHTML = `<div class="term-index">${n+1}</div><span>${q.unknownTerm}</span>`;
+    }
+  }
+
+  /* ---------- Render answer area ---------- */
+  function renderAnswerArea(q) {
+    state.step1Done = false; state.step1Correct = null;
+    $step1Label.hidden = false; $step1Label.classList.remove('done');
+    $step2Label.hidden = false; $step2Label.classList.remove('done');
+    $mcRow1.hidden = false; $mcRow2.hidden = false;
+    $mcRow1.innerHTML = ''; $mcRow2.innerHTML = '';
+    $step1Text.textContent = S(q.step1LabelKey);
+    $step2Text.textContent = S('step2');
+
+    if (q.type === 'repeating') {
+      q.shapeChoices.forEach(token => {
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'mc-btn shape-choice';
+        btn.dataset.value = token;
+        btn.innerHTML = `<div class="shape-display">${svgForToken(token, 36)}</div><div class="shape-label">${S('shape_' + token)}</div>`;
+        btn.addEventListener('click', () => onStep1Click(btn, token));
+        $mcRow1.appendChild(btn);
+      });
+    } else {
+      q.numberChoices.forEach(n => {
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'mc-btn';
+        btn.dataset.value = String(n); btn.textContent = String(n);
+        btn.addEventListener('click', () => onStep1Click(btn, n));
+        $mcRow1.appendChild(btn);
+      });
+    }
+
+    q.ruleChoiceObjs.forEach(r => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'mc-btn rule-choice';
+      btn.dataset.ruleId = r.id;
+      btn.textContent = r[lang];
+      btn.disabled = true;
+      btn.addEventListener('click', () => onStep2Click(btn, r.id));
+      $mcRow2.appendChild(btn);
+    });
+  }
+
+  /* ---------- Render question ---------- */
+  function renderQuestion(q) {
+    state.locked = false;
+    $feedback.textContent = ''; $feedback.className = 'feedback';
+    $ruleReveal.classList.remove('show');
+    state.hintOn = false;
+    $hintBtn.classList.remove('active');
+    $hintBtn.setAttribute('aria-pressed', 'false');
+    $instruction.textContent = S(q.instrKey);
+    const tagText = S(q.tagKey, ...(q.tagParams || []));
+    $patternTagWrap.innerHTML = `<span class="pattern-tag">🔬 ${tagText}</span>`;
+    renderPattern(q);
+    renderAnswerArea(q);
+  }
+
+  /* ---------- Step 1 click ---------- */
+  function onStep1Click(btn, value) {
+    if (state.locked || state.step1Done) return;
+    const q = state.current;
+    const correct = q.type === 'repeating'
+      ? (value === q.unknownTerm)
+      : (parseInt(value, 10) === q.unknownTerm);
+    state.step1Done = true; state.step1Correct = correct;
+    [...$mcRow1.querySelectorAll('.mc-btn')].forEach(b => { b.disabled = true; });
+    if (correct) {
+      btn.classList.add('correct-flash');
+      $step1Label.classList.add('done');
+      revealCorrectAnswer(q);
+    } else {
+      btn.classList.add('wrong-flash');
+      [...$mcRow1.querySelectorAll('.mc-btn')].forEach(b => {
+        const bv = b.dataset.value;
+        if ((q.type === 'repeating' && bv === q.unknownTerm) ||
+            (q.type !== 'repeating' && parseInt(bv, 10) === q.unknownTerm))
+          b.classList.add('correct-flash');
+      });
+      revealCorrectAnswer(q);
+    }
+    [...$mcRow2.querySelectorAll('.mc-btn')].forEach(b => { b.disabled = false; });
+    const first = $mcRow2.querySelector('.mc-btn');
+    if (first) first.focus();
+  }
+
+  /* ---------- Step 2 click ---------- */
+  function onStep2Click(btn, ruleId) {
+    if (state.locked || !state.step1Done) return;
+    const q = state.current;
+    const correct = ruleId === q.correctRuleId;
+    state.locked = true;
+    if (correct) btn.classList.add('correct-flash');
+    else         btn.classList.add('wrong-flash');
+    [...$mcRow2.querySelectorAll('.mc-btn')].forEach(b => {
+      if (b.dataset.ruleId === q.correctRuleId && b !== btn) b.classList.add('correct-flash');
+      b.disabled = true;
+    });
+    if (correct) $step2Label.classList.add('done');
+    if (state.step1Correct && correct) handleCorrect();
+    else handleWrong();
+  }
+
+  /* ---------- Outcome handlers ---------- */
+  function getRuleText(q) {
+    const obj = q.ruleChoiceObjs.find(r => r.id === q.correctRuleId);
+    return obj ? obj[lang] : '';
+  }
+  function showRuleReveal(q) {
+    const explain = S(q.ruleExplainKey, ...q.ruleExplainParams);
+    $ruleReveal.innerHTML = `<span class="label">${S('ruleLabel')}</span> ${explain}`;
+    $ruleReveal.classList.add('show');
+  }
+
+  function handleCorrect() {
+    state.progress = Math.min(TARGET_PROGRESS, state.progress + INCREMENT_RIGHT);
+    $feedback.textContent = pick(S('praises'));
+    $feedback.className = 'feedback good';
+    showRuleReveal(state.current);
+    updateProgress();
+    if (state.progress >= TARGET_PROGRESS) setTimeout(showReward, 1100);
+    else setTimeout(nextQuestion, FEEDBACK_DELAY + 400);
+  }
+
+  function handleWrong() {
+    state.progress = Math.max(0, state.progress - DECREMENT_WRONG);
+    const q = state.current;
+    const ruleText = getRuleText(q);
+    const msg = state.step1Correct === false
+      ? S('wrongMissedTerm', ruleText)
+      : S('wrongRule', ruleText);
+    $feedback.textContent = msg;
+    $feedback.className = 'feedback bad';
+    showRuleReveal(q);
+    updateProgress();
+    setTimeout(nextQuestion, FEEDBACK_DELAY + 1100);
+  }
+
+  /* ---------- Hint toggle ---------- */
+  function toggleHint() {
+    state.hintOn = !state.hintOn;
+    $hintBtn.classList.toggle('active', state.hintOn);
+    $hintBtn.setAttribute('aria-pressed', String(state.hintOn));
+    if (!state.current) return;
+    if (state.hintOn) {
+      const q = state.current;
+      let txt = S('hintLookAt');
+      if (q.type === 'repeating')                          txt = S('hintRepeating', q);
+      else if (q.type === 'arithmetic')                    txt = S('hintArithmetic', q);
+      else if (q.type === 'growing')                       txt = S('hintGrowing', q);
+      else if (q.type === 'mixedOp')                       txt = S('hintMixed', q);
+      else if (q.type === 'triangular' || q.type === 'growingTri') txt = S('hintTriangular', q);
+      $ruleReveal.innerHTML = txt;
+      $ruleReveal.classList.add('show');
+    } else {
+      $ruleReveal.classList.remove('show');
+    }
+  }
+
+  /* ---------- Main loop ---------- */
+  function nextQuestion() {
+    state.current = pickGenerator(state.progress)();
+    renderQuestion(state.current);
+  }
+
+  /* ---------- Reward ---------- */
+  function showReward() {
+    const reward = chooseReward(rewardStore.list);
+    mountReward($rewardImgWrap, reward, S('rewardMissing'));
+    spawnConfetti($confetti);
+    $rewardModal.hidden = false;
+    trapFocus($rewardModal);
+    $playAgainBtn.focus();
+  }
+
+  /* ---------- Reset ---------- */
+  function resetGame() {
+    releaseFocus($rewardModal);
+    state.progress = 0; state.locked = false;
+    $rewardModal.hidden = true;
+    $confetti.innerHTML = '';
+    updateProgress();
+    nextQuestion();
+  }
+
+  /* ---------- Keyboard ---------- */
+  document.addEventListener('keydown', e => {
+    if (state.locked || !state.current) return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (['1','2','3','4'].includes(e.key)) {
+      const row  = state.step1Done ? $mcRow2 : $mcRow1;
+      const btns = row.querySelectorAll('.mc-btn:not([disabled])');
+      const idx  = parseInt(e.key, 10) - 1;
+      if (btns[idx]) btns[idx].click();
+    }
+  });
+
+  /* ---------- Init ---------- */
+  $hintBtn.addEventListener('click', toggleHint);
+  $playAgainBtn.addEventListener('click', resetGame);
+  $langToggleBtn.addEventListener('click', () => setLang(lang === 'tr' ? 'en' : 'tr'));
+
+  applyStaticStrings();
+  updateProgress();
+  nextQuestion();
+})();
+</script>
+</body>
+</html>

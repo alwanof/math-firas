@@ -8,8 +8,9 @@
   "games": {
     "number_city":      { "enabled": false },
     "base-ten-builder": { "enabled": false },
-    "robot-decomposer": { "enabled": true },
-    "number-line-river": { "enabled": true },
-    "skip-count-carnival": { "enabled": true }
+    "robot-decomposer": { "enabled": false },
+    "number-line-river": { "enabled": false },
+    "skip-count-carnival": { "enabled": true },
+    "pattern-lab": { "enabled": true }
   }
 }
