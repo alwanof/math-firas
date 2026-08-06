@@ -589,6 +589,9 @@ main {
     state.locked = false;
     releaseFocus($levelModal);
     $levelModal.hidden = true;
+    /* Drop focus from the hidden level button so a later Enter
+       keypress cannot re-activate it and restart the game. */
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     updateProgress();
     nextQuestion();
   }
@@ -737,9 +740,9 @@ main {
     if (state.locked || !state.current) return;
     const tag = (e.target && e.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    if (/^[0-9]$/.test(e.key))      onNumpadKey(e.key);
-    else if (e.key === 'Backspace') onNumpadKey('back');
-    else if (e.key === 'Enter')     onNumpadKey('enter');
+    if (/^[0-9]$/.test(e.key))      { e.preventDefault(); onNumpadKey(e.key); }
+    else if (e.key === 'Backspace') { e.preventDefault(); onNumpadKey('back'); }
+    else if (e.key === 'Enter')     { e.preventDefault(); onNumpadKey('enter'); }
   });
 
   /* ---------- Init ---------- */

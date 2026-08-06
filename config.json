@@ -13,6 +13,7 @@
     "skip-count-carnival": { "enabled": true },
     "pattern-lab": { "enabled": true },
     "multiplication-tower": { "enabled": true },
-    "subtraction-rocket": { "enabled": true }
+    "subtraction-rocket": { "enabled": true },
+    "subtraction-shuttle": { "enabled": true }
   }
 }
